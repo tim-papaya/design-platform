@@ -1,37 +1,32 @@
 plugins {
-	kotlin("jvm") version "1.9.25"
-	kotlin("plugin.spring") version "1.9.25" apply false
-	id("org.springframework.boot") version "3.5.5" apply false
-	id("io.spring.dependency-management") version "1.1.7"
+    kotlin("jvm") version "1.9.25"
+    kotlin("plugin.spring") version "1.9.25" apply false
+    id("org.springframework.boot") version "3.5.5" apply false
+    id("io.spring.dependency-management") version "1.1.7"
 }
 
 group = "com.papaya.design.platform"
 version = "0.0.1-SNAPSHOT"
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 allprojects {
-	repositories {
-		mavenCentral()
-	}
+    repositories {
+        mavenCentral()
+        maven("https://jitpack.io")
+    }
 }
 
 
 subprojects {
-	apply(plugin = "io.spring.dependency-management")
+    apply(plugin = "io.spring.dependency-management")
 
-	extra["springAiVersion"] = "1.0.1"
+    extra["springAiVersion"] = "1.0.1"
 
-	dependencyManagement {
-		imports {
-			mavenBom("org.springframework.ai:spring-ai-bom:${property("springAiVersion")}")
-		}
-	}
-
-	tasks.withType<Test> {
-		useJUnitPlatform()
-	}
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
 }
