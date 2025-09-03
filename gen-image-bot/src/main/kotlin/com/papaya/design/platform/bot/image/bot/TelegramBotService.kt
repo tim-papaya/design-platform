@@ -256,7 +256,8 @@ class TelegramBotService(
                 runBlocking {
                     aiImageService.generateImage(
                         userPrompt = null,
-                        images = arrayOf(imageBytes)
+                        images = arrayOf(imageBytes),
+                        1
                     ) { base64Image ->
                         // Отправляем результат пользователю
                         sendGeneratedImage(chatId, base64Image)

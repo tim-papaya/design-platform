@@ -41,7 +41,8 @@ class OpenAiImageService(
     override suspend fun generateImage(
         userPrompt: String?,
         vararg images: ByteArray,
-        callback: (String) -> Unit
+        systemPromptVariation: Int,
+        callback: (String) -> Unit,
     ) {
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -51,7 +52,7 @@ class OpenAiImageService(
                 filename = "example.png",
                 body = images.first().toRequestBody("image/png".toMediaType())
             )
-            .addFormDataPart("prompt", "$systemPrompts\n$userPrompt")
+            .addFormDataPart("prompt", "${systemPrompts[systemPromptVariation]}\n$userPrompt")
             .addFormDataPart("output_format", "jpeg")
             .addFormDataPart("quality", "high")
             .addFormDataPart("size", "1024x1024")
