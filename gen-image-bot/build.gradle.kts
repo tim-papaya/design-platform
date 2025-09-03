@@ -14,6 +14,8 @@ dependencies {
     implementation("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.3.0")
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
 }
 
 dependencyManagement {
