@@ -11,7 +11,7 @@ import java.io.File
 import java.util.Base64.getDecoder
 
 
-@SpringBootTest (classes = [AiConfig::class])
+@SpringBootTest(classes = [AiConfig::class])
 @Import(AiConfig::class)
 @Disabled("Integration test - requires API key and network access")
 class OpenAiImageServiceTest {
@@ -22,8 +22,8 @@ class OpenAiImageServiceTest {
     @Test
     fun `should generate image successfully`() = runBlocking {
         val image = Thread.currentThread().contextClassLoader.getResource("example.png").readBytes()
-        openAiImageService.generateImage(null, *arrayOf(image)) { resImageB64 ->
-            File("result.png").writeBytes(getDecoder().decode(resImageB64))
+        openAiImageService.generateImage(null, 1, *arrayOf(image)) { resImagesB64 ->
+            File("result.png").writeBytes(getDecoder().decode(resImagesB64.first()))
         }
     }
 }
