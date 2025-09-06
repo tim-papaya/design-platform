@@ -15,8 +15,8 @@ class HttpClientService {
     
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(120, TimeUnit.SECONDS)
+        .readTimeout(240, TimeUnit.SECONDS)
+        .writeTimeout(240, TimeUnit.SECONDS)
         .build()
 
     suspend fun executeRequest(request: Request): String = withContext(Dispatchers.IO) {
