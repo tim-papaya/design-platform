@@ -16,6 +16,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("org.springframework.data:spring-data-jpa")
 }
 
 dependencyManagement {

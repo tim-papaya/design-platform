@@ -22,7 +22,6 @@ class MockImageService(
 ) : AiImageService {
     override suspend fun generateImage(
         userPrompt: String?,
-        systemPromptVariation: Int,
         vararg images: ByteArray,
         callback: (List<String>) -> Unit
     ) {
@@ -30,6 +29,4 @@ class MockImageService(
 
         callback.invoke(listOf(objectMapper.extractImageInB64(responseFromAi)))
     }
-
-    override fun variationNumber() = 1
 }

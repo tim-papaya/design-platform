@@ -1,4 +1,4 @@
-package com.papaya.design.platform.bot.image
+package com.papaya.design.platform.bot.image.bot
 
 import com.papaya.design.platform.ai.AiConfig
 import org.springframework.boot.autoconfigure.SpringBootApplication

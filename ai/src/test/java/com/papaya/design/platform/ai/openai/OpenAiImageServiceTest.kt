@@ -22,7 +22,7 @@ class OpenAiImageServiceTest {
     @Test
     fun `should generate image successfully`() = runBlocking {
         val image = Thread.currentThread().contextClassLoader.getResource("example.png").readBytes()
-        openAiImageService.generateImage(null, 1, *arrayOf(image)) { resImagesB64 ->
+        openAiImageService.generateImage(null, *arrayOf(image)) { resImagesB64 ->
             File("result.png").writeBytes(getDecoder().decode(resImagesB64.first()))
         }
     }
