@@ -15,6 +15,7 @@ import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.REAL_IMA
 import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.START_CMD
 import com.papaya.design.platform.bot.image.bot.message.removeKeyboard
 import com.papaya.design.platform.bot.image.bot.static.IMAGE_STILL_GENERATING_TEXT
+import com.papaya.design.platform.bot.image.bot.static.WAITING_FOR_IMAGE
 import com.papaya.design.platform.bot.image.bot.user.UserService
 import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
@@ -62,7 +63,7 @@ class TelegramBotService(
                         } else {
                             bot.sendMessage(
                                 chatId = ChatId.fromId(chatId),
-                                text = "Пожалуйста, пришлите изображение для генерации реалистичного интерьера."
+                                text = WAITING_FOR_IMAGE
                             )
                         }
                     }

@@ -1,5 +1,15 @@
 package com.papaya.design.platform.bot.image.bot.static
 
+
+const val WAITING_FOR_IMAGE =
+    "Пожалуйста, пришлите изображение для генерации реалистичного интерьера."
+
+const val IMAGE_RECEIVED_FOR_GENERATION_TEXT =
+    "Получил изображение! Начинаю генерацию реалистичного интерьера, займет примерно минутку..."
+
+const val IMAGE_STILL_GENERATING_TEXT =
+    "Ваше изображение еще генерируется, пожалуйста, подождите."
+
 val WELCOME_MESSAGE_TEXT =
     """
         Roomio by DIROMANOVA – интерьер вашей мечты за пару минут!
@@ -23,11 +33,6 @@ val START_INTERIOR_3D_RENDER_TEXT =
         
         <фото до/после>
     """.trimIndent()
-
-const val IMAGE_RECEIVED_FOR_GENERATION_TEXT =
-    "Получил изображение! Начинаю генерацию реалистичного интерьера, займет примерно минутку..."
-
-const val IMAGE_STILL_GENERATING_TEXT = "Ваше изображение еще генерируется, пожалуйста, подождите."
 
 val IMAGE_GENERATED_TEXT = """
     Готово! Как тебе? 
@@ -58,5 +63,5 @@ val START_ROOM_UPGRADE_TEXT = """
 """.trimIndent()
 
 val WAITING_FOR_UPGRADE_OPTION_TEXT = """
-    Пожалуйста, выбери одну из опция для улучшения интерьера.
+    Пожалуйста, выбери одну из опций для улучшения интерьера:
 """.trimIndent()
