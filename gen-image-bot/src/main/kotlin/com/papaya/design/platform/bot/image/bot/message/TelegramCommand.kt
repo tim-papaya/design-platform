@@ -5,6 +5,7 @@ enum class TelegramCommand(
 ){
     START_CMD("start"),
     REAL_IMAGE_CMD("gen_real"),
-    REAL_IMAGE_EXT_CMD("gen_real_ext"),
+    EXT_REAL_IMAGE_CMD("gen_real_ext"),
+    ROOM_UPGRADE_CMD("room_upgrade"),
     NO_COMMAND("no_command"),
 }

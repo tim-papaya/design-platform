@@ -4,7 +4,8 @@ interface AiImageService {
 
     suspend fun generateImage(
         userPrompt: String?,
-        vararg images: ByteArray,
+        systemPrompt: String,
+        images: List<ByteArray>,
         callback: (base64Images: List<String>) -> Unit
     )
 }

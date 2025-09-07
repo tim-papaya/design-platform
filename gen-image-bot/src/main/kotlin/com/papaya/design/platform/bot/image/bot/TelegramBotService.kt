@@ -5,17 +5,15 @@ import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
+import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
-import com.papaya.design.platform.bot.image.bot.message.ImageMessageService
-import com.papaya.design.platform.bot.image.bot.message.KeyboardInputButton.GENERATE_INTERIOR
-import com.papaya.design.platform.bot.image.bot.message.KeyboardInputButton.START
-import com.papaya.design.platform.bot.image.bot.message.MessageService
-import com.papaya.design.platform.bot.image.bot.message.TelegramCommand
+import com.papaya.design.platform.bot.image.bot.message.*
 import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.REAL_IMAGE_CMD
 import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.START_CMD
-import com.papaya.design.platform.bot.image.bot.message.removeKeyboard
-import com.papaya.design.platform.bot.image.bot.static.IMAGE_STILL_GENERATING_TEXT
-import com.papaya.design.platform.bot.image.bot.static.WAITING_FOR_IMAGE
+import com.papaya.design.platform.bot.image.bot.static.ExtendedRealisticInterior
+import com.papaya.design.platform.bot.image.bot.static.General
+import com.papaya.design.platform.bot.image.bot.static.RealisticInterior
+import com.papaya.design.platform.bot.image.bot.static.RoomUpgrade
 import com.papaya.design.platform.bot.image.bot.user.UserService
 import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
@@ -42,50 +40,200 @@ class TelegramBotService(
             }
             command(REAL_IMAGE_CMD.text) {
                 val chatId = message.chat.id
-                messageService.sendWaitingForPhotoFor3DRenderMessage(bot, chatId, REAL_IMAGE_CMD)
-            }
-            command(TelegramCommand.REAL_IMAGE_EXT_CMD.text) {
-                val chatId = message.chat.id
+                messageService.sendWaitingForPhotoMessage(
+                    bot,
+                    chatId,
+                    StartWaitingForImageCommandState.START_REALISTIC_INTERIOR_GENERATION
+                )
             }
 
             message {
                 val chatId = message.chat.id
                 val messageText = message.text
+                val photos = message.photo
+                    ?.sortedBy { it.fileSize }
+                    ?.map {
+                        //TODO Remove additional logging
+                        log.info { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
+                        Photo().apply { fileId = it.fileId; fileUniqueId = it.fileUniqueId }
+                    }?.let { listOf(it.last()) }
 
-                when (userService.getUser(chatId).userState) {
-                    NEW_USER -> {
-                        messageService.sendFirstTimeWelcome(bot, chatId)
+                val user = userService.getUserOrNull(chatId)
+                    ?: messageService.sendFirstTimeWelcome(bot, chatId)
+
+                when (user.userState) {
+                    READY_FOR_CMD -> {
+                        when (messageText) {
+                            KeyboardInputButton.START.text -> {
+                                messageService.sendFirstTimeWelcome(bot, chatId)
+                            }
+
+                            KeyboardInputButton.GENERATE_REALISTIC_INTERIOR.text -> {
+                                messageService.sendWaitingForPhotoMessage(
+                                    bot,
+                                    chatId,
+                                    StartWaitingForImageCommandState.START_REALISTIC_INTERIOR_GENERATION
+                                )
+                            }
+
+                            KeyboardInputButton.ROOM_UPGRADE.text -> {
+                                messageService.sendWaitingForPhotoMessage(
+                                    bot,
+                                    chatId,
+                                    StartWaitingForImageCommandState.START_ROOM_UPGRADE_GENERATION
+                                )
+                            }
+
+                            KeyboardInputButton.GENERATE_EXTENDED_REALISTIC_INTERIOR.text -> {
+                                messageService.sendWaitingForPhotoMessage(
+                                    bot,
+                                    chatId,
+                                    StartWaitingForImageCommandState.START_EXTENDED_REALISTIC_INTERIOR_GENERATION
+                                )
+                            }
+                        }
                     }
 
-                    WAITING_FOR_PHOTO -> {
-                        if (message.photo != null) {
-                            imageMessageService.handlePhotoMessage(bot, chatId, message.photo!!)
+                    REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
+                        if (photos != null) {
+                            imageMessageService.handlePhotoMessage(
+                                bot,
+                                chatId,
+                                photos,
+                                StartGenerationOfImage.REALISTIC_INTERIOR,
+                            )
                         } else {
                             bot.sendMessage(
                                 chatId = ChatId.fromId(chatId),
-                                text = WAITING_FOR_IMAGE
+                                text = RealisticInterior.Text.WAITING_FOR_IMAGE,
+                                replyMarkup = removeKeyboard(),
                             )
+                        }
+                    }
+
+                    ROOM_UPGRADE_WAITING_FOR_PHOTO -> {
+                        if (photos != null) {
+                            user.photos = photos
+                            user.userState = ROOM_UPGRADE_WAITING_FOR_USER_OPTION
+
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = RoomUpgrade.Text.WAITING_FOR_UPGRADE_OPTION,
+                                replyMarkup = roomUpgrade()
+                            )
+
+                            log.info("Added photo for interior upgrade")
+                        } else {
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = RoomUpgrade.Text.WAITING_FOR_IMAGE
+                            )
+                        }
+                    }
+
+                    ROOM_UPGRADE_WAITING_FOR_USER_OPTION -> {
+                        when (messageText) {
+                            KeyboardInputButton.OPTION_FOR_RENT.text -> {
+                                val photosFromUser = user.photos
+                                imageMessageService.handlePhotoMessage(
+                                    bot,
+                                    chatId,
+                                    photosFromUser,
+                                    StartGenerationOfImage.ROOM_UPGRADE,
+                                    RoomUpgrade.Prompt.FOR_RENT
+                                )
+                            }
+
+                            KeyboardInputButton.OPTION_FOR_SELF.text -> {
+                                val photosFromUser = user.photos
+                                imageMessageService.handlePhotoMessage(
+                                    bot,
+                                    chatId,
+                                    photosFromUser,
+                                    StartGenerationOfImage.ROOM_UPGRADE,
+                                    RoomUpgrade.Prompt.FOR_SELF
+                                )
+                            }
+
+                            else -> {
+                                bot.sendMessage(
+                                    chatId = ChatId.fromId(chatId),
+                                    text = RoomUpgrade.Text.WAITING_FOR_UPGRADE_OPTION,
+                                    replyMarkup = roomUpgrade(),
+                                )
+                            }
                         }
                     }
 
                     WAITING_FOR_END_OF_PHOTO_GENERATION -> {
                         bot.sendMessage(
                             chatId = ChatId.fromId(chatId),
-                            text = IMAGE_STILL_GENERATING_TEXT,
-                            replyMarkup = removeKeyboard()
+                            text = General.Text.IMAGE_STILL_GENERATING,
+                            replyMarkup = removeKeyboard(),
                         )
                     }
 
-                    READY_FOR_CMD -> {
-                        // Keyboard input applying
-                        when (messageText) {
-                            START.text -> {
-                                messageService.sendFirstTimeWelcome(bot, chatId)
-                            }
+                    EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
+                        if (photos != null) {
+                            user.photos = photos
+                            user.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_USER_PROMPT
 
-                            GENERATE_INTERIOR.text -> {
-                                messageService.sendWaitingForPhotoFor3DRenderMessage(bot, chatId, REAL_IMAGE_CMD)
-                            }
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = ExtendedRealisticInterior.Text.WAITING_FOR_USER_PROMPT,
+                                replyMarkup = removeKeyboard()
+                            )
+                            log.info("Added photo for extended interior upgrade")
+
+                        } else {
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = ExtendedRealisticInterior.Text.WAITING_FOR_IMAGE,
+                                replyMarkup = removeKeyboard(),
+                            )
+                        }
+                    }
+
+                    EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_USER_PROMPT -> {
+                        if (messageText != null) {
+                            user.userPrompt = messageText
+                            user.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_ADDITIONAL_PHOTO
+
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = ExtendedRealisticInterior.Text.WAITING_FOR_ADDITIONAL_IMAGES,
+                                replyMarkup = prepareForExtendedRealisticGeneration()
+                            )
+                            log.info("Added user prompt for extended interior upgrade")
+                        }
+                    }
+
+                    EXTENDED_REALISTIC_INTERIOR_WAITING_ADDITIONAL_PHOTO -> {
+                        if (messageText == KeyboardInputButton.EXTENDED_REALISTIC_INTERIOR_READY_FOR_GENERATION.text) {
+                            val savedPhotos = user.photos
+                            val savedPrompt = user.userPrompt
+                            imageMessageService.handlePhotoMessage(
+                                bot,
+                                chatId,
+                                savedPhotos,
+                                StartGenerationOfImage.EXTENDED_REALISTIC_INTERIOR,
+                                savedPrompt
+                            )
+                        } else if (photos != null) {
+                            // TODO Add validation of photos merge
+                            user.photos = user.photos + photos
+
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = ExtendedRealisticInterior.Text.ACCEPTED_ADDITIONAL_IMAGES,
+                                replyMarkup = prepareForExtendedRealisticGeneration()
+                            )
+                            log.info("Added additional photo for extended interior upgrade")
+                        } else {
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = ExtendedRealisticInterior.Text.WAITING_FOR_IMAGE
+                            )
                         }
                     }
                 }

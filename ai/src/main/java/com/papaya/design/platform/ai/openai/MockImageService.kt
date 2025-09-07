@@ -22,7 +22,8 @@ class MockImageService(
 ) : AiImageService {
     override suspend fun generateImage(
         userPrompt: String?,
-        vararg images: ByteArray,
+        systemPrompt: String,
+        images: List<ByteArray>,
         callback: (List<String>) -> Unit
     ) {
         val responseFromAi = Thread.currentThread().contextClassLoader.getResource("mock_result_b64.json").readText()

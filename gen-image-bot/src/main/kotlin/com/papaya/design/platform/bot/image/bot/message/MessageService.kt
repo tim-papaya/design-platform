@@ -3,10 +3,11 @@ package com.papaya.design.platform.bot.image.bot.message
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.types.TelegramBotResult
-import com.papaya.design.platform.bot.image.bot.user.UserService
+import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState
-import com.papaya.design.platform.bot.image.bot.static.START_INTERIOR_3D_RENDER_TEXT
-import com.papaya.design.platform.bot.image.bot.static.WELCOME_MESSAGE_TEXT
+import com.papaya.design.platform.bot.image.bot.static.Error
+import com.papaya.design.platform.bot.image.bot.static.General
+import com.papaya.design.platform.bot.image.bot.user.UserService
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
@@ -19,40 +20,71 @@ class MessageService(
     fun sendFirstTimeWelcome(
         bot: Bot,
         chatId: Long,
-    ) {
-        userService.getUser(chatId).userState = UserState.READY_FOR_CMD
-
-        val welcomeResult = bot.sendMessage(
+    ): User {
+        val user = userService.addUser(chatId)
+        bot.sendMessage(
             chatId = ChatId.Companion.fromId(chatId),
-            text = WELCOME_MESSAGE_TEXT,
+            text = General.Text.WELCOME_MESSAGE,
             replyMarkup = createMainKeyboard()
         )
+        return user
     }
 
-    fun sendWaitingForPhotoFor3DRenderMessage(
+    fun sendWaitingForPhotoMessage(
         bot: Bot,
         chatId: Long,
-        cmd: TelegramCommand,
+        commandState: StartWaitingForImageCommandState,
     ) {
-        userService.getUser(chatId).userState = UserState.WAITING_FOR_PHOTO
+        userService.getUser(chatId).userState = commandState.newState
 
         val result = bot.sendMessage(
             chatId = ChatId.Companion.fromId(chatId),
-            text = START_INTERIOR_3D_RENDER_TEXT,
+            text = commandState.textToShow,
             replyMarkup = removeKeyboard()
         )
         result.fold({
             log.info("User $chatId is now waiting for image")
         }, { e ->
-            logErrorInCommand(cmd, e)
-            userService.getUser(chatId).userState = UserState.READY_FOR_CMD
+            logErrorInCommand(commandState.cmd, e)
+            userService.getUser(chatId).userState = commandState.stateToReturn
         })
     }
+
 
     private fun logErrorInCommand(
         cmd: TelegramCommand,
         e: TelegramBotResult.Error
     ) {
         log.error("Error in ${cmd.text} command: $e")
+    }
+
+    fun sendGenerationCompletionMessage(bot: Bot, chatId: Long, successMessage: String, ) {
+        userService.getUser(chatId).userState = UserState.READY_FOR_CMD
+        bot.sendMessage(
+            chatId = ChatId.fromId(chatId),
+            text = General.Text.NEXT_STEP,
+            replyMarkup = createMainKeyboard()
+        )
+        log.info("$successMessage in $chatId")
+    }
+
+    fun sendErrorMessage(bot: Bot, chatId: Long, errorMessage: String, e: Exception) {
+        sendError(chatId, bot)
+        log.error("$errorMessage: ${e.message}", e)
+    }
+
+    fun sendErrorMessage(bot: Bot, chatId: Long, errorMessage: String) {
+        sendError(chatId, bot)
+        log.error(errorMessage)
+    }
+
+    private fun sendError(chatId: Long, bot: Bot) {
+        userService.getUser(chatId).userState = UserState.READY_FOR_CMD
+
+        bot.sendMessage(
+            chatId = ChatId.fromId(chatId),
+            text = Error.Text.ERROR_ON_PROCESSING_IMAGE,
+            replyMarkup = createMainKeyboard()
+        )
     }
 }

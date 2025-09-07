@@ -3,14 +3,15 @@ package com.papaya.design.platform.bot.image.bot.message
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.TelegramFile
-import com.github.kotlintelegrambot.entities.files.PhotoSize
+import com.github.kotlintelegrambot.network.bimap
 import com.github.kotlintelegrambot.network.fold
 import com.papaya.design.platform.ai.AiImageService
-import com.papaya.design.platform.bot.image.bot.static.IMAGE_RECEIVED_FOR_GENERATION_TEXT
-import com.papaya.design.platform.bot.image.bot.user.UserService
+import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.UserState.WAITING_FOR_END_OF_PHOTO_GENERATION
 import com.papaya.design.platform.bot.image.bot.image.downloadImageAsBytes
-import com.papaya.design.platform.bot.image.bot.static.IMAGE_GENERATED_TEXT
+import com.papaya.design.platform.bot.image.bot.log.TracingService
+import com.papaya.design.platform.bot.image.bot.static.General
+import com.papaya.design.platform.bot.image.bot.user.UserService
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -18,6 +19,7 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.Base64.getDecoder
+import kotlin.collections.forEach
 
 private val log = KotlinLogging.logger { }
 
@@ -29,100 +31,101 @@ class ImageMessageService(
     @Value("\${telegram.api-key}")
     private val apiKey: String,
     private val aiImageService: AiImageService,
+    @Value("\${com.papaya.design.platform.bot.image.max.image.number:8}")
+    private val maxNumberOfPhotos: Int,
+    private val messageService: MessageService,
+    private val tracingService: TracingService,
 ) {
 
     @OptIn(DelicateCoroutinesApi::class)
     fun handlePhotoMessage(
         bot: Bot,
         chatId: Long,
-        photos: List<PhotoSize>
+        photos: List<Photo>,
+        commandState: StartGenerationOfImage,
+        userPrompt: String? = null,
     ) {
         try {
             userService.getUser(chatId).userState = WAITING_FOR_END_OF_PHOTO_GENERATION
 
             bot.sendMessage(
                 chatId = ChatId.fromId(chatId),
-                text = IMAGE_RECEIVED_FOR_GENERATION_TEXT
+                text = General.Text.IMAGE_RECEIVED_FOR_GENERATION
             )
+            GlobalScope.launch {
+                try {
+                    val resultPhotos = photos
+                        .take(maxNumberOfPhotos)
+                        .mapNotNull { currentPhoto ->
+                            bot.getFile(currentPhoto.fileId).bimap({ file ->
+                                val fileUrl = "$TELEGRAM_IMAGE_URL$apiKey/${file?.result?.filePath}"
+                                val imageBytes = downloadImageAsBytes(fileUrl)
+                                log.info("Received photo from Telegram chat size - ${imageBytes.size}")
+                                imageBytes
+                            }, { error ->
+                                messageService.sendErrorMessage(bot, chatId, "Error getting file: ${error.errorBody}")
+                                null
+                            })
+                        }
+                    // TODO Remove tracing
+                    GlobalScope.launch {
+                        if (!(userPrompt?.trim().isNullOrEmpty()))
+                            tracingService.logPrompt(chatId, userPrompt!!)
+                        resultPhotos.forEach { tracingService.logImage(chatId, it, "jpeg") }
+                    }
 
-            val firstPhoto = photos.first()
-            val fileReceivedResult = bot.getFile(firstPhoto.fileId)
-
-            fileReceivedResult.fold({ file ->
-                val fileUrl = "$TELEGRAM_IMAGE_URL$apiKey/${file?.result?.filePath}"
-                val imageBytes = downloadImageAsBytes(fileUrl)
-                log.info("Received photo from Telegram chat")
-
-                GlobalScope.launch {
                     aiImageService.generateImage(
-                        userPrompt = null,
-                        images = arrayOf(imageBytes),
+                        userPrompt = userPrompt,
+                        systemPrompt = commandState.systemPrompt,
+                        images = resultPhotos,
                     ) { base64Images ->
-                        base64Images.forEach {
-                            sendGeneratedImage(bot, chatId, it)
+                        val imageArray = base64Images
+                            .map { getDecoder().decode(it) }
+
+                        // TODO Remove tracing
+                        GlobalScope.launch {
+                            imageArray.forEach { tracingService.logResultImage(chatId, it, "png") }
+                        }
+                        log.info("Generated ${imageArray.size} images as output")
+                        sendGeneratedImage(bot, chatId, imageArray.first())
+
+                        if (imageArray.size > 1) {
+                            log.error("To many output images")
                         }
                     }
+                } catch (e: Exception) {
+                    messageService.sendErrorMessage(bot, chatId, "Error handling photo message", e)
                 }
-
-            }, { error ->
-                log.error("Error getting file: $error")
-                bot.sendMessage(
-                    chatId = ChatId.fromId(chatId),
-                    text = "Ошибка при получении файла: $error",
-                    replyMarkup = createMainKeyboard()
-                )
-            })
+            }
 
         } catch (e: Exception) {
-            log.error("Error handling photo message: ${e.message}", e)
-            bot.sendMessage(
-                chatId = ChatId.fromId(chatId),
-                text = "Произошла ошибка при обработке изображения. Пожалуйста, выберите кнопку - Поддержка.",
-                replyMarkup = createMainKeyboard()
-            )
+            messageService.sendErrorMessage(bot, chatId, "Error handling photo message", e)
         }
     }
 
     private fun sendGeneratedImage(
         bot: Bot,
         chatId: Long,
-        base64Image: String
+        imageBytes: ByteArray
     ) {
         try {
-            val imageBytes = getDecoder().decode(base64Image)
-
             val result = bot.sendPhoto(
                 chatId = ChatId.fromId(chatId),
                 photo = TelegramFile.ByByteArray(
                     fileBytes = imageBytes,
                     filename = "generated_interior_${System.currentTimeMillis()}.png"
                 ),
-                caption = IMAGE_GENERATED_TEXT
+                caption = General.Text.IMAGE_GENERATED
             )
 
             result.fold({
-                log.info("Successfully sent generated image to user $chatId")
-                bot.sendMessage(
-                    chatId = ChatId.fromId(chatId),
-                    text = "Что делаем дальше?",
-                    replyMarkup = createMainKeyboard()
-                )
+                messageService.sendGenerationCompletionMessage(bot, chatId, "Successfully sent generated image to user")
             }, { error ->
-                log.error("Error sending generated image: $error")
-                bot.sendMessage(
-                    chatId = ChatId.fromId(chatId),
-                    text = "Генерация завершена, но произошла ошибка при отправке изображения: $error",
-                    replyMarkup = createMainKeyboard()
-                )
+                messageService.sendErrorMessage(bot, chatId, "Error sending generated image: ${error.errorBody}")
             })
 
         } catch (e: Exception) {
-            log.error("Error sending generated image: ${e.message}", e)
-            bot.sendMessage(
-                chatId = ChatId.fromId(chatId),
-                text = "Произошла ошибка при отправке сгенерированного изображения. Пожалуйста, выберите кнопку - Поддержка.",
-                replyMarkup = createMainKeyboard()
-            )
+            messageService.sendErrorMessage(bot, chatId, "Error sending generated image", e)
         }
     }
 }
