@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit
 
 @Service
 class HttpClientService {
-    
     private val logger = KotlinLogging.logger {}
     
     private val client = OkHttpClient.Builder()

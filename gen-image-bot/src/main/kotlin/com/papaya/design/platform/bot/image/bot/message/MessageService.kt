@@ -2,7 +2,9 @@ package com.papaya.design.platform.bot.image.bot.message
 
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
-import com.github.kotlintelegrambot.types.TelegramBotResult
+import com.github.kotlintelegrambot.entities.TelegramFile
+import com.github.kotlintelegrambot.network.ResponseError
+import com.github.kotlintelegrambot.network.fold
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.static.Error
@@ -16,6 +18,7 @@ private val log = KotlinLogging.logger { }
 @Service
 class MessageService(
     private val userService: UserService,
+    private val imageLoader: ExamplesLocalImageLoader
 ) {
     fun sendFirstTimeWelcome(
         bot: Bot,
@@ -37,10 +40,14 @@ class MessageService(
     ) {
         userService.getUser(chatId).userState = commandState.newState
 
-        val result = bot.sendMessage(
+        val result = bot.sendPhoto(
             chatId = ChatId.Companion.fromId(chatId),
-            text = commandState.textToShow,
-            replyMarkup = onlyBackKeyboard()
+            caption = commandState.textToShow,
+            replyMarkup = onlyBackKeyboard(),
+            photo = TelegramFile.ByByteArray(
+                fileBytes = imageLoader.loadImage(commandState.exampleImages.first()),
+                filename = "example_interior_${System.currentTimeMillis()}.jpeg"
+            ),
         )
         result.fold({
             log.info("User $chatId is now waiting for image")
@@ -53,12 +60,12 @@ class MessageService(
 
     private fun logErrorInCommand(
         cmd: TelegramCommand,
-        e: TelegramBotResult.Error
+        e: ResponseError
     ) {
         log.error("Error in ${cmd.text} command: $e")
     }
 
-    fun sendGenerationCompletionMessage(bot: Bot, chatId: Long, successMessage: String, ) {
+    fun sendGenerationCompletionMessage(bot: Bot, chatId: Long, successMessage: String) {
         userService.getUser(chatId).userState = UserState.READY_FOR_CMD
         bot.sendMessage(
             chatId = ChatId.fromId(chatId),

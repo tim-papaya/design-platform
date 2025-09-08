@@ -14,4 +14,3 @@ data class ImageData(
     @JsonProperty("b64_json")
     val b64Json: String? = null,
 )
-

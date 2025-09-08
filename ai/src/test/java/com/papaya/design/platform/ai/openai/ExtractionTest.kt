@@ -5,9 +5,7 @@ import com.papaya.design.platform.ai.extractImageInB64
 import org.junit.jupiter.api.Test
 import kotlin.test.DefaultAsserter.assertTrue
 
-
 class ExtractionTest {
-
     @Test
     fun `should extract image in b64 format`() {
         val responseFromAi = Thread.currentThread().contextClassLoader.getResource("result_b64.json").readText()

@@ -10,12 +10,10 @@ import org.springframework.context.annotation.Import
 import java.io.File
 import java.util.Base64.getDecoder
 
-
 @SpringBootTest(classes = [AiConfig::class])
 @Import(AiConfig::class)
 @Disabled("Integration test - requires API key and network access")
 class OpenAiImageServiceTest {
-
     @Autowired
     lateinit var openAiImageService: OpenAiImageService
 

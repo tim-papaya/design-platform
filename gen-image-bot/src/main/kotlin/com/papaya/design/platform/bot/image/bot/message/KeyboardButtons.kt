@@ -19,28 +19,26 @@ enum class KeyboardInputButton(val text: String) {
 fun createMainKeyboard(): KeyboardReplyMarkup {
     return KeyboardReplyMarkup(
         keyboard = listOf(
-            listOf(
-                KeyboardButton(GENERATE_REALISTIC_INTERIOR.text),
-                KeyboardButton(GENERATE_EXTENDED_REALISTIC_INTERIOR.text),
-                KeyboardButton(ROOM_UPGRADE.text),
-            )
+            listOf(KeyboardButton(GENERATE_REALISTIC_INTERIOR.text)),
+            listOf(KeyboardButton(GENERATE_EXTENDED_REALISTIC_INTERIOR.text)),
+            listOf(KeyboardButton(ROOM_UPGRADE.text)),
         ),
         resizeKeyboard = true,
-        oneTimeKeyboard = false
+        oneTimeKeyboard = true
     )
 }
 
 fun roomUpgrade(): KeyboardReplyMarkup {
     return KeyboardReplyMarkup(
         keyboard = listOf(
+            listOf(KeyboardButton(OPTION_FOR_SELF.text)),
             listOf(
-                KeyboardButton(OPTION_FOR_SELF.text),
                 KeyboardButton(OPTION_FOR_RENT.text),
-                KeyboardButton(CANCEL.text),
-            )
+                KeyboardButton(CANCEL.text)
+            ),
         ),
         resizeKeyboard = true,
-        oneTimeKeyboard = false
+        oneTimeKeyboard = true
     )
 }
 
@@ -64,7 +62,7 @@ fun onlyBackKeyboard(): KeyboardReplyMarkup {
             )
         ),
         resizeKeyboard = true,
-        oneTimeKeyboard = false
+        oneTimeKeyboard = true
     )
 }
 
