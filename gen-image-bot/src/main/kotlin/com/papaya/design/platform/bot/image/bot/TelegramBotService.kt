@@ -3,6 +3,7 @@ package com.papaya.design.platform.bot.image.bot
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.command
+import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
 import com.papaya.design.platform.ai.openai.OpenAiImageService
@@ -10,6 +11,7 @@ import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Com
 import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.HIGH
 import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.LOW
 import com.papaya.design.platform.bot.image.bot.domain.Photo
+import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
 import com.papaya.design.platform.bot.image.bot.message.*
 import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.REAL_IMAGE_CMD
@@ -50,7 +52,6 @@ class TelegramBotService(
                     StartWaitingForImageCommandState.START_REALISTIC_INTERIOR_GENERATION
                 )
             }
-
             command(TelegramCommand.LOW_QUALITY.text) {
                 val chatId = message.chat.id
                 messageService.sendQualityMessage(bot, chatId, "Выбрано низкое качество генерации", LOW)
@@ -59,32 +60,15 @@ class TelegramBotService(
                 val chatId = message.chat.id
                 messageService.sendQualityMessage(bot, chatId, "Выбрано среднее качество генерации", AVERAGE)
             }
-
             command(TelegramCommand.HIGH_QUALITY.text) {
                 val chatId = message.chat.id
                 messageService.sendQualityMessage(bot, chatId, "Выбрано высокое качество генерации", HIGH)
             }
-
             message {
                 val chatId = message.chat.id
-                val user = userService.getUserOrNull(chatId)
-                    ?: messageService.sendFirstTimeWelcome(bot, chatId)
-
+                val user = getUserOrCreate(chatId)
                 val messageText = message.text
-                val photos = message.photo
-                    ?.sortedBy { it.fileSize }
-                    ?.map {
-                        //TODO Remove additional logging
-                        log.info { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
-                        it
-                    }?.let { photoSizeList ->
-                        if (user.qualityPreset != OpenAiImageService.QualityPreset.HIGH) {
-                            photoSizeList.first { it.height >= 300 && it.width >= 300 }
-                        } else {
-                            photoSizeList.last()
-                        }
-                    }?.let { Photo().apply { fileId = it.fileId; fileUniqueId = it.fileUniqueId } }
-                    ?.let { listOf(it) }
+                val photos = extractPhotoFromMessage(user)
 
                 if (messageText == KeyboardInputButton.CANCEL.text) {
                     messageService.sendGenerationCompletionMessage(bot, chatId, "Return to main menu")
@@ -93,9 +77,7 @@ class TelegramBotService(
                 when (user.userState) {
                     READY_FOR_CMD -> {
                         when (messageText) {
-                            KeyboardInputButton.START.text -> {
-                                messageService.sendFirstTimeWelcome(bot, chatId)
-                            }
+                            KeyboardInputButton.START.text -> messageService.sendFirstTimeWelcome(bot, chatId)
 
                             KeyboardInputButton.GENERATE_REALISTIC_INTERIOR.text -> {
                                 messageService.sendWaitingForPhotoMessage(
@@ -275,4 +257,22 @@ class TelegramBotService(
         bot.startPolling()
         log.info { "Telegram bot started" }
     }
+
+    private fun MessageHandlerEnvironment.extractPhotoFromMessage(user: User): List<Photo>? = message.photo
+        ?.sortedBy { it.fileSize }
+        ?.map {
+            //TODO Remove additional logging
+            log.info { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
+            it
+        }?.let { photoSizeList ->
+            if (user.qualityPreset != HIGH) {
+                photoSizeList.first { it.height >= 300 && it.width >= 300 }
+            } else {
+                photoSizeList.last()
+            }
+        }?.let { Photo().apply { fileId = it.fileId; fileUniqueId = it.fileUniqueId } }
+        ?.let { listOf(it) }
+
+    private fun MessageHandlerEnvironment.getUserOrCreate(chatId: Long): User = (userService.getUserOrNull(chatId)
+        ?: messageService.sendFirstTimeWelcome(bot, chatId))
 }
