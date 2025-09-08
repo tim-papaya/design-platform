@@ -29,6 +29,7 @@ class SimpleUserService : UserService {
     override fun addUser(userId: Long): User {
         val newUser = User().apply {
             userState = UserState.READY_FOR_CMD
+            id = userId
         }
         users[userId] = newUser
 

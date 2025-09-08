@@ -6,7 +6,6 @@ import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
-import com.papaya.design.platform.ai.openai.OpenAiImageService
 import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.AVERAGE
 import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.HIGH
 import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.LOW
@@ -41,48 +40,48 @@ class TelegramBotService(
         token = apiKey
         dispatch {
             command(START_CMD.text) {
-                val chatId = message.chat.id
-                messageService.sendFirstTimeWelcome(bot, chatId)
+                messageService.sendFirstTimeWelcome(bot, message.userId())
             }
             command(REAL_IMAGE_CMD.text) {
-                val chatId = message.chat.id
+                val id = message.telegramId()
                 messageService.sendWaitingForPhotoMessage(
                     bot,
-                    chatId,
+                    id,
                     StartWaitingForImageCommandState.START_REALISTIC_INTERIOR_GENERATION
                 )
             }
             command(TelegramCommand.LOW_QUALITY.text) {
-                val chatId = message.chat.id
-                messageService.sendQualityMessage(bot, chatId, "Выбрано низкое качество генерации", LOW)
+                val id = message.telegramId()
+                messageService.sendQualityMessage(bot, id, "Выбрано низкое качество генерации", LOW)
             }
             command(TelegramCommand.AVERAGE_QUALITY.text) {
-                val chatId = message.chat.id
-                messageService.sendQualityMessage(bot, chatId, "Выбрано среднее качество генерации", AVERAGE)
+                val id = message.telegramId()
+                messageService.sendQualityMessage(bot, id, "Выбрано среднее качество генерации", AVERAGE)
             }
             command(TelegramCommand.HIGH_QUALITY.text) {
-                val chatId = message.chat.id
-                messageService.sendQualityMessage(bot, chatId, "Выбрано высокое качество генерации", HIGH)
+                val id = message.telegramId()
+                messageService.sendQualityMessage(bot, id, "Выбрано высокое качество генерации", HIGH)
             }
             message {
-                val chatId = message.chat.id
-                val user = getUserOrCreate(chatId)
+                val id = TelegramId(message.chat.id, message.userId())
+
+                val user = getUserOrCreate(id.userId)
                 val messageText = message.text
                 val photos = extractPhotoFromMessage(user)
 
                 if (messageText == KeyboardInputButton.CANCEL.text) {
-                    messageService.sendGenerationCompletionMessage(bot, chatId, "Return to main menu")
+                    messageService.sendGenerationCompletionMessage(bot, id, "Return to main menu")
                 }
 
                 when (user.userState) {
                     READY_FOR_CMD -> {
                         when (messageText) {
-                            KeyboardInputButton.START.text -> messageService.sendFirstTimeWelcome(bot, chatId)
+                            KeyboardInputButton.START.text -> messageService.sendFirstTimeWelcome(bot, user.id)
 
                             KeyboardInputButton.GENERATE_REALISTIC_INTERIOR.text -> {
                                 messageService.sendWaitingForPhotoMessage(
                                     bot,
-                                    chatId,
+                                    id,
                                     StartWaitingForImageCommandState.START_REALISTIC_INTERIOR_GENERATION
                                 )
                             }
@@ -90,7 +89,7 @@ class TelegramBotService(
                             KeyboardInputButton.ROOM_UPGRADE.text -> {
                                 messageService.sendWaitingForPhotoMessage(
                                     bot,
-                                    chatId,
+                                    id,
                                     StartWaitingForImageCommandState.START_ROOM_UPGRADE_GENERATION
                                 )
                             }
@@ -98,8 +97,16 @@ class TelegramBotService(
                             KeyboardInputButton.GENERATE_EXTENDED_REALISTIC_INTERIOR.text -> {
                                 messageService.sendWaitingForPhotoMessage(
                                     bot,
-                                    chatId,
+                                    id,
                                     StartWaitingForImageCommandState.START_EXTENDED_REALISTIC_INTERIOR_GENERATION
+                                )
+                            }
+
+                            KeyboardInputButton.PLANNED_REALISTIC_INTERIOR.text -> {
+                                messageService.sendWaitingForPhotoMessage(
+                                    bot,
+                                    id,
+                                    StartWaitingForImageCommandState.START_PLANED_REALISTIC_INTERIOR_GENERATION
                                 )
                             }
                         }
@@ -109,13 +116,13 @@ class TelegramBotService(
                         if (photos != null) {
                             imageMessageService.handlePhotoMessage(
                                 bot,
-                                chatId,
+                                id,
                                 photos,
                                 StartGenerationOfImage.REALISTIC_INTERIOR,
                             )
                         } else {
                             bot.sendMessage(
-                                chatId = ChatId.fromId(chatId),
+                                chatId = ChatId.fromId(id.chatId),
                                 text = RealisticInterior.Text.WAITING_FOR_IMAGE,
                                 replyMarkup = removeKeyboard(),
                             )
@@ -128,7 +135,7 @@ class TelegramBotService(
                             user.userState = ROOM_UPGRADE_WAITING_FOR_USER_OPTION
 
                             bot.sendMessage(
-                                chatId = ChatId.fromId(chatId),
+                                chatId = ChatId.fromId(id.chatId),
                                 text = RoomUpgrade.Text.WAITING_FOR_UPGRADE_OPTION,
                                 replyMarkup = roomUpgrade()
                             )
@@ -136,8 +143,9 @@ class TelegramBotService(
                             log.info("Added photo for interior upgrade")
                         } else {
                             bot.sendMessage(
-                                chatId = ChatId.fromId(chatId),
-                                text = RoomUpgrade.Text.WAITING_FOR_IMAGE
+                                chatId = ChatId.fromId(id.chatId),
+                                text = RoomUpgrade.Text.WAITING_FOR_IMAGE,
+                                replyMarkup = onlyBackKeyboard()
                             )
                         }
                     }
@@ -148,7 +156,7 @@ class TelegramBotService(
                                 val photosFromUser = user.photos
                                 imageMessageService.handlePhotoMessage(
                                     bot,
-                                    chatId,
+                                    id,
                                     photosFromUser,
                                     StartGenerationOfImage.ROOM_UPGRADE,
                                     RoomUpgrade.Prompt.FOR_RENT
@@ -159,7 +167,7 @@ class TelegramBotService(
                                 val photosFromUser = user.photos
                                 imageMessageService.handlePhotoMessage(
                                     bot,
-                                    chatId,
+                                    id,
                                     photosFromUser,
                                     StartGenerationOfImage.ROOM_UPGRADE,
                                     RoomUpgrade.Prompt.FOR_SELF
@@ -168,7 +176,7 @@ class TelegramBotService(
 
                             else -> {
                                 bot.sendMessage(
-                                    chatId = ChatId.fromId(chatId),
+                                    chatId = ChatId.fromId(id.chatId),
                                     text = RoomUpgrade.Text.WAITING_FOR_UPGRADE_OPTION,
                                     replyMarkup = roomUpgrade(),
                                 )
@@ -178,7 +186,7 @@ class TelegramBotService(
 
                     WAITING_FOR_END_OF_PHOTO_GENERATION -> {
                         bot.sendMessage(
-                            chatId = ChatId.fromId(chatId),
+                            chatId = ChatId.fromId(id.chatId),
                             text = General.Text.IMAGE_STILL_GENERATING,
                             replyMarkup = removeKeyboard(),
                         )
@@ -190,17 +198,17 @@ class TelegramBotService(
                             user.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_USER_PROMPT
 
                             bot.sendMessage(
-                                chatId = ChatId.fromId(chatId),
+                                chatId = ChatId.fromId(id.chatId),
                                 text = ExtendedRealisticInterior.Text.WAITING_FOR_USER_PROMPT,
-                                replyMarkup = removeKeyboard()
+                                replyMarkup = onlyBackKeyboard()
                             )
                             log.info("Added photo for extended interior upgrade")
 
                         } else {
                             bot.sendMessage(
-                                chatId = ChatId.fromId(chatId),
+                                chatId = ChatId.fromId(id.chatId),
                                 text = ExtendedRealisticInterior.Text.WAITING_FOR_IMAGE,
-                                replyMarkup = removeKeyboard(),
+                                replyMarkup = onlyBackKeyboard(),
                             )
                         }
                     }
@@ -211,7 +219,7 @@ class TelegramBotService(
                             user.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_ADDITIONAL_PHOTO
 
                             bot.sendMessage(
-                                chatId = ChatId.fromId(chatId),
+                                chatId = ChatId.fromId(id.chatId),
                                 text = ExtendedRealisticInterior.Text.WAITING_FOR_ADDITIONAL_IMAGES,
                                 replyMarkup = prepareForExtendedRealisticGeneration()
                             )
@@ -225,7 +233,7 @@ class TelegramBotService(
                             val savedPrompt = user.userPrompt
                             imageMessageService.handlePhotoMessage(
                                 bot,
-                                chatId,
+                                id,
                                 savedPhotos,
                                 StartGenerationOfImage.EXTENDED_REALISTIC_INTERIOR,
                                 savedPrompt
@@ -235,17 +243,26 @@ class TelegramBotService(
                             user.photos = user.photos + photos
 
                             bot.sendMessage(
-                                chatId = ChatId.fromId(chatId),
+                                chatId = ChatId.fromId(id.chatId),
                                 text = ExtendedRealisticInterior.Text.ACCEPTED_ADDITIONAL_IMAGES,
-                                replyMarkup = prepareForExtendedRealisticGeneration()
+                                replyMarkup = prepareForExtendedRealisticGeneration(),
                             )
                             log.info("Added additional photo for extended interior upgrade")
                         } else {
                             bot.sendMessage(
-                                chatId = ChatId.fromId(chatId),
-                                text = ExtendedRealisticInterior.Text.WAITING_FOR_IMAGE
+                                chatId = ChatId.fromId(id.chatId),
+                                text = ExtendedRealisticInterior.Text.WAITING_FOR_IMAGE,
+                                replyMarkup = onlyBackKeyboard(),
                             )
                         }
+                    }
+
+                    PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
+                        messageService.sendMessageOnWaitingForPhoto(bot, user, id.chatId, photos)
+                    }
+
+                    PLANNED_REALISTIC_INTERIOR_WAITING_FOR_USER_OPTION -> {
+
                     }
                 }
             }
@@ -273,6 +290,6 @@ class TelegramBotService(
         }?.let { Photo().apply { fileId = it.fileId; fileUniqueId = it.fileUniqueId } }
         ?.let { listOf(it) }
 
-    private fun MessageHandlerEnvironment.getUserOrCreate(chatId: Long): User = (userService.getUserOrNull(chatId)
-        ?: messageService.sendFirstTimeWelcome(bot, chatId))
+    private fun MessageHandlerEnvironment.getUserOrCreate(userId: Long): User = (userService.getUserOrNull(userId)
+        ?: messageService.sendFirstTimeWelcome(bot, userId))
 }

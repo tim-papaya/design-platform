@@ -6,10 +6,13 @@ import com.github.kotlintelegrambot.entities.TelegramFile
 import com.github.kotlintelegrambot.network.ResponseError
 import com.github.kotlintelegrambot.network.fold
 import com.papaya.design.platform.ai.openai.OpenAiImageService
+import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState
+import com.papaya.design.platform.bot.image.bot.domain.UserState.ROOM_UPGRADE_WAITING_FOR_USER_OPTION
 import com.papaya.design.platform.bot.image.bot.static.Error
 import com.papaya.design.platform.bot.image.bot.static.General
+import com.papaya.design.platform.bot.image.bot.static.RoomUpgrade
 import com.papaya.design.platform.bot.image.bot.user.UserService
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -22,23 +25,27 @@ class MessageService(
     private val imageLoader: ExamplesLocalImageLoader
 ) {
     fun sendQualityMessage(
-        bot: Bot, chatId: Long, showMessage: String, preset: OpenAiImageService.QualityPreset
+        bot: Bot,
+        id: TelegramId,
+        showMessage: String,
+        preset: OpenAiImageService.QualityPreset
     ) {
-        userService.getUser(chatId).qualityPreset = preset
+        userService.getUser(id.userId).qualityPreset = preset
 
         bot.sendMessage(
-            chatId = ChatId.fromId(chatId),
+            chatId = ChatId.fromId(id.chatId),
             text = showMessage,
         )
-        log.info { "Quality selected - $preset by $chatId" }
+        log.info { "Quality selected - $preset by ${id.userId}" }
     }
+
     fun sendFirstTimeWelcome(
         bot: Bot,
-        chatId: Long,
+        userId: Long,
     ): User {
-        val user = userService.addUser(chatId)
+        val user = userService.addUser(userId)
         bot.sendMessage(
-            chatId = ChatId.Companion.fromId(chatId),
+            chatId = ChatId.Companion.fromId(userId),
             text = General.Text.WELCOME_MESSAGE,
             replyMarkup = createMainKeyboard()
         )
@@ -47,13 +54,13 @@ class MessageService(
 
     fun sendWaitingForPhotoMessage(
         bot: Bot,
-        chatId: Long,
+        id: TelegramId,
         commandState: StartWaitingForImageCommandState,
     ) {
-        userService.getUser(chatId).userState = commandState.newState
+        userService.getUser(id.userId).userState = commandState.newState
 
         val result = bot.sendPhoto(
-            chatId = ChatId.Companion.fromId(chatId),
+            chatId = ChatId.Companion.fromId(id.chatId),
             caption = commandState.textToShow,
             replyMarkup = onlyBackKeyboard(),
             photo = TelegramFile.ByByteArray(
@@ -62,10 +69,10 @@ class MessageService(
             ),
         )
         result.fold({
-            log.info("User $chatId is now waiting for image")
+            log.info("User $id.chatId is now waiting for image")
         }, { e ->
             logErrorInCommand(commandState.cmd, e)
-            userService.getUser(chatId).userState = commandState.stateToReturn
+            userService.getUser(id.userId).userState = commandState.stateToReturn
         })
     }
 
@@ -77,33 +84,54 @@ class MessageService(
         log.error("Error in ${cmd.text} command: $e")
     }
 
-    fun sendGenerationCompletionMessage(bot: Bot, chatId: Long, successMessage: String) {
-        userService.getUser(chatId).userState = UserState.READY_FOR_CMD
+    fun sendGenerationCompletionMessage(bot: Bot, id: TelegramId, successMessage: String) {
+        userService.getUser(id.userId).userState = UserState.READY_FOR_CMD
         bot.sendMessage(
-            chatId = ChatId.fromId(chatId),
+            chatId = ChatId.fromId(id.chatId),
             text = General.Text.NEXT_STEP,
             replyMarkup = createMainKeyboard()
         )
-        log.info("$successMessage in $chatId")
+        log.info("$successMessage in $id.chatId")
     }
 
-    fun sendErrorMessage(bot: Bot, chatId: Long, errorMessage: String, e: Exception) {
-        sendError(chatId, bot)
+    fun sendErrorMessage(bot: Bot, id: TelegramId, errorMessage: String, e: Exception) {
+        sendError(id, bot)
         log.error("$errorMessage: ${e.message}", e)
     }
 
-    fun sendErrorMessage(bot: Bot, chatId: Long, errorMessage: String) {
-        sendError(chatId, bot)
+    fun sendErrorMessage(bot: Bot, id: TelegramId, errorMessage: String) {
+        sendError(id, bot)
         log.error(errorMessage)
     }
 
-    private fun sendError(chatId: Long, bot: Bot) {
-        userService.getUser(chatId).userState = UserState.READY_FOR_CMD
+    private fun sendError(id: TelegramId, bot: Bot) {
+        userService.getUser(id.userId).userState = UserState.READY_FOR_CMD
 
         bot.sendMessage(
-            chatId = ChatId.fromId(chatId),
+            chatId = ChatId.fromId(id.chatId),
             text = Error.Text.ERROR_ON_PROCESSING_IMAGE,
             replyMarkup = createMainKeyboard()
         )
+    }
+
+    fun sendMessageOnWaitingForPhoto(bot: Bot, user: User, chatId: Long, photos: List<Photo>?) {
+        if (photos != null) {
+            user.photos = photos
+            user.userState = ROOM_UPGRADE_WAITING_FOR_USER_OPTION
+
+            bot.sendMessage(
+                chatId = ChatId.fromId(chatId),
+                text = RoomUpgrade.Text.WAITING_FOR_UPGRADE_OPTION,
+                replyMarkup = roomUpgrade()
+            )
+
+            log.info("Added photo for interior upgrade")
+        } else {
+            bot.sendMessage(
+                chatId = ChatId.fromId(chatId),
+                text = RoomUpgrade.Text.WAITING_FOR_IMAGE,
+                replyMarkup = onlyBackKeyboard()
+            )
+        }
     }
 }

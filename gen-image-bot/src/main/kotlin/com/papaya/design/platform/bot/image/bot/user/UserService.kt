@@ -8,4 +8,7 @@ interface UserService {
     fun getUserOrNull(usedId: Long): User?
 
     fun addUser(userId: Long) : User
+    fun saveUser(id: Long) {
+
+    }
 }

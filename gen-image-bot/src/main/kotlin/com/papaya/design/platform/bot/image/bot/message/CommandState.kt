@@ -3,6 +3,7 @@ package com.papaya.design.platform.bot.image.bot.message
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
 import com.papaya.design.platform.bot.image.bot.static.ExtendedRealisticInterior
+import com.papaya.design.platform.bot.image.bot.static.PlannedRealisticInterior
 import com.papaya.design.platform.bot.image.bot.static.RealisticInterior
 import com.papaya.design.platform.bot.image.bot.static.RoomUpgrade
 import java.nio.file.Path
@@ -36,6 +37,13 @@ class StartWaitingForImageCommandState(
             cmd = TelegramCommand.EXT_REAL_IMAGE_CMD,
             newState = EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO,
             textToShow = ExtendedRealisticInterior.Text.START_GENERATION,
+            stateToReturn = READY_FOR_CMD,
+            exampleImages = listOf(LocalImage.REALISTIC_EXAMPLE_1),
+        )
+        val START_PLANED_REALISTIC_INTERIOR_GENERATION = StartWaitingForImageCommandState(
+            cmd = TelegramCommand.PLANED_REAL_IMAGE_CMD,
+            newState = PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO,
+            textToShow = PlannedRealisticInterior.Text.START_GENERATION,
             stateToReturn = READY_FOR_CMD,
             exampleImages = listOf(LocalImage.REALISTIC_EXAMPLE_1),
         )
