@@ -14,7 +14,10 @@ enum class KeyboardInputButton(val text: String) {
     OPTION_FOR_SELF("🏠 Для себя"),
     OPTION_FOR_RENT("💲 Для аренды"),
     CANCEL("⬆ В главное меню"),
-    EXTENDED_REALISTIC_INTERIOR_READY_FOR_GENERATION("✨ Фото отправлены")
+    EXTENDED_REALISTIC_INTERIOR_READY_FOR_GENERATION("✨ Фото отправлены"),
+    KITCHEN("Столовая"),
+    BEDROOM("Спальня"),
+    GUESTROOM("Гостинная"),
 }
 
 fun createMainKeyboard(): KeyboardReplyMarkup {
@@ -70,4 +73,17 @@ fun onlyBackKeyboard(): KeyboardReplyMarkup {
 
 fun removeKeyboard(): ReplyKeyboardRemove {
     return ReplyKeyboardRemove(removeKeyboard = true)
+}
+
+fun planedKeyboard(): KeyboardReplyMarkup {
+    return KeyboardReplyMarkup(
+        keyboard = listOf(
+            listOf(KeyboardButton(KITCHEN.text)),
+            listOf(KeyboardButton(BEDROOM.text)),
+            listOf(KeyboardButton(GUESTROOM.text)),
+            listOf(KeyboardButton(CANCEL.text)),
+        ),
+        resizeKeyboard = true,
+        oneTimeKeyboard = true
+    )
 }

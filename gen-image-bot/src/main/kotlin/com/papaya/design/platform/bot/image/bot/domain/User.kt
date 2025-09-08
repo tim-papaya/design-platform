@@ -6,6 +6,6 @@ class User {
     var id: Long = 0
     lateinit var userPrompt: String
     lateinit var userState: UserState
-    lateinit var photos: List<Photo>
+    var photos: List<Photo> = listOf()
     var qualityPreset: OpenAiImageService.QualityPreset = OpenAiImageService.QualityPreset.AVERAGE
 }

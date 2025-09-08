@@ -69,7 +69,7 @@ class MessageService(
             ),
         )
         result.fold({
-            log.info("User $id.chatId is now waiting for image")
+            log.info("User $id is now waiting for image")
         }, { e ->
             logErrorInCommand(commandState.cmd, e)
             userService.getUser(id.userId).userState = commandState.stateToReturn
@@ -91,7 +91,7 @@ class MessageService(
             text = General.Text.NEXT_STEP,
             replyMarkup = createMainKeyboard()
         )
-        log.info("$successMessage in $id.chatId")
+        log.info("$successMessage in $id")
     }
 
     fun sendErrorMessage(bot: Bot, id: TelegramId, errorMessage: String, e: Exception) {
@@ -114,22 +114,25 @@ class MessageService(
         )
     }
 
-    fun sendMessageOnWaitingForPhoto(bot: Bot, user: User, chatId: Long, photos: List<Photo>?) {
+    fun sendMessageOnWaitingForPhoto(bot: Bot, id: TelegramId, photos: List<Photo>?, waitingPhotoState: WaitingPhotoState) {
         if (photos != null) {
-            user.photos = photos
-            user.userState = ROOM_UPGRADE_WAITING_FOR_USER_OPTION
+            val user = userService.getUser(id.userId)
+            // TODO Add validation
+            user.photos += photos
+            user.userState = waitingPhotoState.newState
+            userService.saveUser(id.userId)
 
             bot.sendMessage(
-                chatId = ChatId.fromId(chatId),
-                text = RoomUpgrade.Text.WAITING_FOR_UPGRADE_OPTION,
-                replyMarkup = roomUpgrade()
+                chatId = ChatId.fromId(id.chatId),
+                text = waitingPhotoState.messageText,
+                replyMarkup = waitingPhotoState.nextKeyboardMarkup
             )
 
-            log.info("Added photo for interior upgrade")
+            log.info("Added photo for interior generation")
         } else {
             bot.sendMessage(
-                chatId = ChatId.fromId(chatId),
-                text = RoomUpgrade.Text.WAITING_FOR_IMAGE,
+                chatId = ChatId.fromId(id.chatId),
+                text = waitingPhotoState.errorText,
                 replyMarkup = onlyBackKeyboard()
             )
         }

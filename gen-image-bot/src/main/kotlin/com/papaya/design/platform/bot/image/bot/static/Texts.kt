@@ -110,6 +110,8 @@ object PlannedRealisticInterior {
             "Пожалуйста, пришлите план для генерации интерьера."
         const val WAITING_FOR_OPTION =
             "Пожалуйста, выбери один из предложенных ракурсов или напиши свой:"
+        const val WAITING_FOR_PLAN =
+            "Пожалуйста, пришлите план помещения. Это должно быть изображение."
     }
 
     object Prompt {

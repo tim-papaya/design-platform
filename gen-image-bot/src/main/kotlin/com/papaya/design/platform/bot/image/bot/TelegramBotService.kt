@@ -13,8 +13,11 @@ import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
 import com.papaya.design.platform.bot.image.bot.message.*
+import com.papaya.design.platform.bot.image.bot.message.StartGenerationOfImage.Companion.PLANED_REALISTIC_INTERIOR
 import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.REAL_IMAGE_CMD
 import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.START_CMD
+import com.papaya.design.platform.bot.image.bot.message.WaitingPhotoState.Companion.PLANED_BEFORE_OPTIONS
+import com.papaya.design.platform.bot.image.bot.message.WaitingPhotoState.Companion.PLANED_BEFORE_PLAN
 import com.papaya.design.platform.bot.image.bot.static.ExtendedRealisticInterior
 import com.papaya.design.platform.bot.image.bot.static.General
 import com.papaya.design.platform.bot.image.bot.static.RealisticInterior
@@ -258,11 +261,17 @@ class TelegramBotService(
                     }
 
                     PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
-                        messageService.sendMessageOnWaitingForPhoto(bot, user, id.chatId, photos)
+                        messageService.sendMessageOnWaitingForPhoto(bot, id, photos, PLANED_BEFORE_PLAN)
+                    }
+
+                    PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PLAN -> {
+                        messageService.sendMessageOnWaitingForPhoto(bot, id, photos, PLANED_BEFORE_OPTIONS)
                     }
 
                     PLANNED_REALISTIC_INTERIOR_WAITING_FOR_USER_OPTION -> {
-
+                        if (messageText != null) {
+                            imageMessageService.handlePhotoMessage(bot, id, user.photos, PLANED_REALISTIC_INTERIOR, messageText)
+                        }
                     }
                 }
             }

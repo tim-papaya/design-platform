@@ -63,5 +63,8 @@ class StartGenerationOfImage(
         val EXTENDED_REALISTIC_INTERIOR = StartGenerationOfImage(
             systemPrompt = ExtendedRealisticInterior.Prompt.SYSTEM_PROMPT
         )
+        val PLANED_REALISTIC_INTERIOR = StartGenerationOfImage(
+            systemPrompt = PlannedRealisticInterior.Prompt.SYSTEM_PROMPT
+        )
     }
 }
