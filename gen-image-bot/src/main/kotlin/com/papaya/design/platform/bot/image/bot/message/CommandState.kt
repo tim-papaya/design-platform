@@ -8,8 +8,7 @@ import com.papaya.design.platform.bot.image.bot.static.RoomUpgrade
 import java.nio.file.Path
 import kotlin.io.path.readBytes
 
-open class CommandState {
-}
+open class CommandState
 
 class StartWaitingForImageCommandState(
     val cmd: TelegramCommand,

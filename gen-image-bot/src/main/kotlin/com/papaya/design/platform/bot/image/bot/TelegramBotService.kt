@@ -6,6 +6,9 @@ import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
 import com.papaya.design.platform.ai.openai.OpenAiImageService
+import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.AVERAGE
+import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.HIGH
+import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.LOW
 import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
 import com.papaya.design.platform.bot.image.bot.message.*
@@ -50,36 +53,17 @@ class TelegramBotService(
 
             command(TelegramCommand.LOW_QUALITY.text) {
                 val chatId = message.chat.id
-                userService.getUser(chatId).qualityPreset = OpenAiImageService.QualityPreset.LOW
-
-                bot.sendMessage(
-                    chatId = ChatId.fromId(chatId),
-                    text = "Выбрано низкое качество генерации",
-                )
-                log.info { "Low quality selected by $chatId" }
+                messageService.sendQualityMessage(bot, chatId, "Выбрано низкое качество генерации", LOW)
             }
             command(TelegramCommand.AVERAGE_QUALITY.text) {
                 val chatId = message.chat.id
-                userService.getUser(chatId).qualityPreset = OpenAiImageService.QualityPreset.AVERAGE
-
-                bot.sendMessage(
-                    chatId = ChatId.fromId(chatId),
-                    text = "Выбрано среднее качество генерации",
-                )
-                log.info { "Average quality selected by $chatId" }
+                messageService.sendQualityMessage(bot, chatId, "Выбрано среднее качество генерации", AVERAGE)
             }
 
             command(TelegramCommand.HIGH_QUALITY.text) {
                 val chatId = message.chat.id
-                userService.getUser(chatId).qualityPreset = OpenAiImageService.QualityPreset.HIGH
-
-                bot.sendMessage(
-                    chatId = ChatId.fromId(chatId),
-                    text = "Выбрано высокое качество генерации",
-                )
-                log.info { "High quality selected by $chatId" }
+                messageService.sendQualityMessage(bot, chatId, "Выбрано высокое качество генерации", HIGH)
             }
-
 
             message {
                 val chatId = message.chat.id

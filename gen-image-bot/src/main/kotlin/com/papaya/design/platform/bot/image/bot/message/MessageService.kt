@@ -5,6 +5,7 @@ import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.TelegramFile
 import com.github.kotlintelegrambot.network.ResponseError
 import com.github.kotlintelegrambot.network.fold
+import com.papaya.design.platform.ai.openai.OpenAiImageService
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.static.Error
@@ -20,6 +21,17 @@ class MessageService(
     private val userService: UserService,
     private val imageLoader: ExamplesLocalImageLoader
 ) {
+    fun sendQualityMessage(
+        bot: Bot, chatId: Long, showMessage: String, preset: OpenAiImageService.QualityPreset
+    ) {
+        userService.getUser(chatId).qualityPreset = preset
+
+        bot.sendMessage(
+            chatId = ChatId.fromId(chatId),
+            text = showMessage,
+        )
+        log.info { "Quality selected - $preset by $chatId" }
+    }
     fun sendFirstTimeWelcome(
         bot: Bot,
         chatId: Long,
