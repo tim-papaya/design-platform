@@ -9,7 +9,7 @@ enum class KeyboardInputButton(val text: String) {
     GENERATE_REALISTIC_INTERIOR("🖼️ 3D-визуализация по коллажу"),
     GENERATE_EXTENDED_REALISTIC_INTERIOR("🏡 Обновление по вашему фото или описанию"),
     ROOM_UPGRADE("🔼 Обновление с помощью ИИ-алгоритмов"),
-    PLANNED_REALISTIC_INTERIOR("📋 3D-визуализация по плану"),
+    PLANNED_REALISTIC_INTERIOR("📋 3D-визуализация по мудбоарду"),
     START("✨ Начать"),
     OPTION_FOR_SELF("🏠 Для себя"),
     OPTION_FOR_RENT("💲 Для аренды"),
