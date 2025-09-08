@@ -12,7 +12,7 @@ enum class KeyboardInputButton(val text: String) {
     START("✨ Начать"),
     OPTION_FOR_SELF("🏠 Для себя"),
     OPTION_FOR_RENT("💲 Для аренды"),
-    CANCEL("Назад"),
+    CANCEL("⬆ В главное меню"),
     EXTENDED_REALISTIC_INTERIOR_READY_FOR_GENERATION("✨ Фото отправлены")
 }
 
@@ -49,6 +49,18 @@ fun prepareForExtendedRealisticGeneration(): KeyboardReplyMarkup {
         keyboard = listOf(
             listOf(
                 KeyboardButton(EXTENDED_REALISTIC_INTERIOR_READY_FOR_GENERATION.text),
+            )
+        ),
+        resizeKeyboard = true,
+        oneTimeKeyboard = false
+    )
+}
+
+fun onlyBackKeyboard(): KeyboardReplyMarkup {
+    return KeyboardReplyMarkup(
+        keyboard = listOf(
+            listOf(
+                KeyboardButton(CANCEL.text),
             )
         ),
         resizeKeyboard = true,

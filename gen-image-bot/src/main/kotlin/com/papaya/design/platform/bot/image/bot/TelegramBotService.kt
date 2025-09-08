@@ -5,6 +5,7 @@ import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
+import com.papaya.design.platform.ai.openai.OpenAiImageService
 import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
 import com.papaya.design.platform.bot.image.bot.message.*
@@ -47,19 +48,63 @@ class TelegramBotService(
                 )
             }
 
+            command(TelegramCommand.LOW_QUALITY.text) {
+                val chatId = message.chat.id
+                userService.getUser(chatId).qualityPreset = OpenAiImageService.QualityPreset.LOW
+
+                bot.sendMessage(
+                    chatId = ChatId.fromId(chatId),
+                    text = "Выбрано низкое качество генерации",
+                )
+                log.info { "Low quality selected by $chatId" }
+            }
+            command(TelegramCommand.AVERAGE_QUALITY.text) {
+                val chatId = message.chat.id
+                userService.getUser(chatId).qualityPreset = OpenAiImageService.QualityPreset.AVERAGE
+
+                bot.sendMessage(
+                    chatId = ChatId.fromId(chatId),
+                    text = "Выбрано среднее качество генерации",
+                )
+                log.info { "Average quality selected by $chatId" }
+            }
+
+            command(TelegramCommand.HIGH_QUALITY.text) {
+                val chatId = message.chat.id
+                userService.getUser(chatId).qualityPreset = OpenAiImageService.QualityPreset.HIGH
+
+                bot.sendMessage(
+                    chatId = ChatId.fromId(chatId),
+                    text = "Выбрано высокое качество генерации",
+                )
+                log.info { "High quality selected by $chatId" }
+            }
+
+
             message {
                 val chatId = message.chat.id
+                val user = userService.getUserOrNull(chatId)
+                    ?: messageService.sendFirstTimeWelcome(bot, chatId)
+
                 val messageText = message.text
                 val photos = message.photo
                     ?.sortedBy { it.fileSize }
                     ?.map {
                         //TODO Remove additional logging
                         log.info { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
-                        Photo().apply { fileId = it.fileId; fileUniqueId = it.fileUniqueId }
-                    }?.let { listOf(it.last()) }
+                        it
+                    }?.let { photoSizeList ->
+                        if (user.qualityPreset != OpenAiImageService.QualityPreset.HIGH) {
+                            photoSizeList.first { it.height >= 300 && it.width >= 300 }
+                        } else {
+                            photoSizeList.last()
+                        }
+                    }?.let { Photo().apply { fileId = it.fileId; fileUniqueId = it.fileUniqueId } }
+                    ?.let { listOf(it) }
 
-                val user = userService.getUserOrNull(chatId)
-                    ?: messageService.sendFirstTimeWelcome(bot, chatId)
+                if (messageText == KeyboardInputButton.CANCEL.text) {
+                    messageService.sendGenerationCompletionMessage(bot, chatId, "Return to main menu")
+                }
 
                 when (user.userState) {
                     READY_FOR_CMD -> {

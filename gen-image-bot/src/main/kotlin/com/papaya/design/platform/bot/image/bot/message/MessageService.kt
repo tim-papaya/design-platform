@@ -40,7 +40,7 @@ class MessageService(
         val result = bot.sendMessage(
             chatId = ChatId.Companion.fromId(chatId),
             text = commandState.textToShow,
-            replyMarkup = removeKeyboard()
+            replyMarkup = onlyBackKeyboard()
         )
         result.fold({
             log.info("User $chatId is now waiting for image")

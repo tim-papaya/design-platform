@@ -13,8 +13,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 
-private val log = KotlinLogging.logger {}
-
 @Profile("test-tg-bot")
 @Service
 class MockImageService(
@@ -24,6 +22,7 @@ class MockImageService(
         userPrompt: String?,
         systemPrompt: String,
         images: List<ByteArray>,
+        qualityPreset: OpenAiImageService.QualityPreset,
         callback: (List<String>) -> Unit
     ) {
         val responseFromAi = Thread.currentThread().contextClassLoader.getResource("mock_result_b64.json").readText()
