@@ -73,6 +73,8 @@ class TelegramBotService(
                 val photos = extractPhotoFromMessage(user)
 
                 if (messageText == KeyboardInputButton.CANCEL.text) {
+                    // TODO VALIDATE PHOTOS
+                    user.photos = listOf()
                     messageService.sendGenerationCompletionMessage(bot, id, "Return to main menu")
                 }
 
@@ -261,6 +263,8 @@ class TelegramBotService(
                     }
 
                     PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
+                        // TODO VALIDATE PHOTOS
+                        user.photos = listOf()
                         messageService.sendMessageOnWaitingForPhoto(bot, id, photos, PLANED_BEFORE_PLAN)
                     }
 

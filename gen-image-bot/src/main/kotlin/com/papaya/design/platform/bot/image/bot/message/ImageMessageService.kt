@@ -50,10 +50,12 @@ class ImageMessageService(
 
             bot.sendMessage(
                 chatId = ChatId.fromId(id.chatId),
-                text = General.Text.IMAGE_RECEIVED_FOR_GENERATION
+                text = General.Text.IMAGE_RECEIVED_FOR_GENERATION,
+                replyMarkup = removeKeyboard()
             )
             GlobalScope.launch {
                 try {
+                    log.info {"Will use ${photos.size} input images for generation"}
                     val resultPhotos = photos
                         .take(maxNumberOfPhotos)
                         .mapNotNull { currentPhoto ->

@@ -14,13 +14,13 @@ data class WaitingPhotoState(
         val PLANED_BEFORE_PLAN = WaitingPhotoState(
             UserState.PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PLAN,
             PlannedRealisticInterior.Text.WAITING_FOR_PLAN,
-            planedKeyboard(),
+            onlyBackKeyboard(),
             PlannedRealisticInterior.Text.WAITING_FOR_IMAGE
         )
         val PLANED_BEFORE_OPTIONS = WaitingPhotoState(
             UserState.PLANNED_REALISTIC_INTERIOR_WAITING_FOR_USER_OPTION,
             PlannedRealisticInterior.Text.WAITING_FOR_OPTION,
-            onlyBackKeyboard(),
+            planedKeyboard(),
             PlannedRealisticInterior.Text.WAITING_FOR_PLAN
         )
     }
