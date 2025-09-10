@@ -1,14 +1,14 @@
 package com.papaya.design.platform.bot.image.bot.user
 
 import com.papaya.design.platform.bot.image.bot.domain.User
+import com.papaya.design.platform.bot.image.bot.domain.UserEntity
 
 interface UserService {
-    fun getUser(usedId: Long): User
+    fun getUser(userId: Long): User
 
-    fun getUserOrNull(usedId: Long): User?
+    fun getUserOrNull(userId: Long): User?
 
-    fun addUser(userId: Long) : User
-    fun saveUser(id: Long) {
+    fun saveUser(user: User, changeMapper: (user: UserEntity) -> Unit = {}): User
 
-    }
+    fun saveUser(userId: Long, changeMapper: (UserEntity) -> Unit = {}): User
 }

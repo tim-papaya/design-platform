@@ -7,6 +7,7 @@ import com.github.kotlintelegrambot.network.bimap
 import com.github.kotlintelegrambot.network.fold
 import com.papaya.design.platform.ai.AiImageService
 import com.papaya.design.platform.bot.image.bot.domain.Photo
+import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.UserState.WAITING_FOR_END_OF_PHOTO_GENERATION
 import com.papaya.design.platform.bot.image.bot.image.downloadImageAsBytes
 import com.papaya.design.platform.bot.image.bot.log.TracingService
@@ -45,8 +46,9 @@ class ImageMessageService(
         userPrompt: String? = null,
     ) {
         try {
-            userService.getUser(id.userId).userState = WAITING_FOR_END_OF_PHOTO_GENERATION
-            userService.saveUser(id.userId)
+            userService.saveUser(id.userId) { u ->
+                u.userState = WAITING_FOR_END_OF_PHOTO_GENERATION
+            }
 
             bot.sendMessage(
                 chatId = ChatId.fromId(id.chatId),
@@ -55,7 +57,7 @@ class ImageMessageService(
             )
             GlobalScope.launch {
                 try {
-                    log.info {"Will use ${photos.size} input images for generation"}
+                    log.info { "Will use ${photos.size} input images for generation" }
                     val resultPhotos = photos
                         .take(maxNumberOfPhotos)
                         .mapNotNull { currentPhoto ->

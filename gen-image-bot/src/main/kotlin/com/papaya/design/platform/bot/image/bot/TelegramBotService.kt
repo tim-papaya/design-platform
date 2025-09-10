@@ -6,12 +6,12 @@ import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
-import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.AVERAGE
-import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.HIGH
-import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.Companion.LOW
+import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset
+import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.HIGH
 import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
+import com.papaya.design.platform.bot.image.bot.domain.toEntity
 import com.papaya.design.platform.bot.image.bot.message.*
 import com.papaya.design.platform.bot.image.bot.message.StartGenerationOfImage.Companion.PLANED_REALISTIC_INTERIOR
 import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.REAL_IMAGE_CMD
@@ -55,11 +55,11 @@ class TelegramBotService(
             }
             command(TelegramCommand.LOW_QUALITY.text) {
                 val id = message.telegramId()
-                messageService.sendQualityMessage(bot, id, "Выбрано низкое качество генерации", LOW)
+                messageService.sendQualityMessage(bot, id, "Выбрано низкое качество генерации", QualityPreset.LOW)
             }
             command(TelegramCommand.AVERAGE_QUALITY.text) {
                 val id = message.telegramId()
-                messageService.sendQualityMessage(bot, id, "Выбрано среднее качество генерации", AVERAGE)
+                messageService.sendQualityMessage(bot, id, "Выбрано среднее качество генерации", QualityPreset.AVERAGE)
             }
             command(TelegramCommand.HIGH_QUALITY.text) {
                 val id = message.telegramId()
@@ -74,14 +74,16 @@ class TelegramBotService(
 
                 if (messageText == KeyboardInputButton.CANCEL.text) {
                     // TODO VALIDATE PHOTOS
-                    user.photos = listOf()
+                    userService.saveUser(id.userId) { u ->
+                        u.photos = listOf()
+                    }
                     messageService.sendGenerationCompletionMessage(bot, id, "Return to main menu")
                 }
 
                 when (user.userState) {
                     READY_FOR_CMD -> {
                         when (messageText) {
-                            KeyboardInputButton.START.text -> messageService.sendFirstTimeWelcome(bot, user.id)
+                            KeyboardInputButton.START.text -> messageService.sendFirstTimeWelcome(bot, user.userId)
 
                             KeyboardInputButton.GENERATE_REALISTIC_INTERIOR.text -> {
                                 messageService.sendWaitingForPhotoMessage(
@@ -136,8 +138,10 @@ class TelegramBotService(
 
                     ROOM_UPGRADE_WAITING_FOR_PHOTO -> {
                         if (photos != null) {
-                            user.photos = photos
-                            user.userState = ROOM_UPGRADE_WAITING_FOR_USER_OPTION
+                            userService.saveUser(id.userId) { u ->
+                                u.photos = photos.map { it.toEntity() }
+                                u.userState = ROOM_UPGRADE_WAITING_FOR_USER_OPTION
+                            }
 
                             bot.sendMessage(
                                 chatId = ChatId.fromId(id.chatId),
@@ -199,8 +203,10 @@ class TelegramBotService(
 
                     EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
                         if (photos != null) {
-                            user.photos = photos
-                            user.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_USER_PROMPT
+                            userService.saveUser(id.userId) { u ->
+                                u.photos = photos.map { it.toEntity() }
+                                u.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_USER_PROMPT
+                            }
 
                             bot.sendMessage(
                                 chatId = ChatId.fromId(id.chatId),
@@ -220,8 +226,10 @@ class TelegramBotService(
 
                     EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_USER_PROMPT -> {
                         if (messageText != null) {
-                            user.userPrompt = messageText
-                            user.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_ADDITIONAL_PHOTO
+                            userService.saveUser(id.userId) { u ->
+                                u.userPrompt = messageText
+                                u.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_ADDITIONAL_PHOTO
+                            }
 
                             bot.sendMessage(
                                 chatId = ChatId.fromId(id.chatId),
@@ -245,7 +253,9 @@ class TelegramBotService(
                             )
                         } else if (photos != null) {
                             // TODO Add validation of photos merge
-                            user.photos = user.photos + photos
+                            userService.saveUser(id.userId) { u ->
+                                u.photos = (user.photos + photos).map { it.toEntity() }
+                            }
 
                             bot.sendMessage(
                                 chatId = ChatId.fromId(id.chatId),
@@ -264,7 +274,10 @@ class TelegramBotService(
 
                     PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
                         // TODO VALIDATE PHOTOS
-                        user.photos = listOf()
+                        userService.saveUser(id.userId) { u ->
+                            u.photos = listOf()
+                        }
+
                         messageService.sendMessageOnWaitingForPhoto(bot, id, photos, PLANED_BEFORE_PLAN)
                     }
 
@@ -274,7 +287,13 @@ class TelegramBotService(
 
                     PLANNED_REALISTIC_INTERIOR_WAITING_FOR_USER_OPTION -> {
                         if (messageText != null) {
-                            imageMessageService.handlePhotoMessage(bot, id, user.photos, PLANED_REALISTIC_INTERIOR, messageText)
+                            imageMessageService.handlePhotoMessage(
+                                bot,
+                                id,
+                                user.photos,
+                                PLANED_REALISTIC_INTERIOR,
+                                messageText
+                            )
                         }
                     }
                 }
@@ -300,7 +319,7 @@ class TelegramBotService(
             } else {
                 photoSizeList.last()
             }
-        }?.let { Photo().apply { fileId = it.fileId; fileUniqueId = it.fileUniqueId } }
+        }?.let { Photo(it.fileId, it.fileUniqueId) }
         ?.let { listOf(it) }
 
     private fun MessageHandlerEnvironment.getUserOrCreate(userId: Long): User = (userService.getUserOrNull(userId)

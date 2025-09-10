@@ -1,6 +1,6 @@
 package com.papaya.design.platform.bot.image.bot.domain
 
-class Photo {
-    lateinit var fileId: String
-    lateinit var fileUniqueId: String
-}
+data class Photo (
+    val fileId: String,
+    val fileUniqueId: String,
+)

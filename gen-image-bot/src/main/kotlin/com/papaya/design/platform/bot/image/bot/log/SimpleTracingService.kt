@@ -10,7 +10,7 @@ import kotlin.io.path.writeText
 
 @Service
 class SimpleTracingService(
-    @Value("\${com.papaya.design.platform.bot.image.trace-log.path}")
+    @Value("\${com.papaya.design.platform.bot.image.trace-log.path:}")
     private val logPath: String
 ) : TracingService {
     private val homeDirectory = System.getProperty("user.home")

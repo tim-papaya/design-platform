@@ -25,13 +25,10 @@ class OpenAiImageService(
     @Value("\${spring.ai.openai.api-key}") private val apiKey: String,
 ) : AiImageService {
 
-    data class QualityPreset(val quality: String, val fidelity: String, val outputExtension: String) {
-        companion object {
-            val LOW = QualityPreset("medium", "low", "jpeg")
-            val AVERAGE = QualityPreset("high", "high", "jpeg")
-            
-            val HIGH = QualityPreset("high", "high", "png")
-        }
+    enum class QualityPreset(val quality: String, val fidelity: String, val outputExtension: String) {
+        LOW("medium", "low", "jpeg"),
+        AVERAGE("high", "high", "jpeg"),
+        HIGH("high", "high", "png"),
     }
 
     override suspend fun generateImage(

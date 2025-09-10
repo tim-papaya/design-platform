@@ -10,9 +10,9 @@ import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.UserState.ROOM_UPGRADE_WAITING_FOR_USER_OPTION
+import com.papaya.design.platform.bot.image.bot.domain.toEntity
 import com.papaya.design.platform.bot.image.bot.static.Error
 import com.papaya.design.platform.bot.image.bot.static.General
-import com.papaya.design.platform.bot.image.bot.static.RoomUpgrade
 import com.papaya.design.platform.bot.image.bot.user.UserService
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -30,7 +30,9 @@ class MessageService(
         showMessage: String,
         preset: OpenAiImageService.QualityPreset
     ) {
-        userService.getUser(id.userId).qualityPreset = preset
+        userService.saveUser(id.userId) { u ->
+            u.qualityPreset = preset
+        }
 
         bot.sendMessage(
             chatId = ChatId.fromId(id.chatId),
@@ -43,7 +45,8 @@ class MessageService(
         bot: Bot,
         userId: Long,
     ): User {
-        val user = userService.addUser(userId)
+        val user = userService.saveUser(userId)
+
         bot.sendMessage(
             chatId = ChatId.Companion.fromId(userId),
             text = General.Text.WELCOME_MESSAGE,
@@ -57,7 +60,9 @@ class MessageService(
         id: TelegramId,
         commandState: StartWaitingForImageCommandState,
     ) {
-        userService.getUser(id.userId).userState = commandState.newState
+        userService.saveUser(id.userId) { u ->
+            u.userState = commandState.newState
+        }
 
         val result = bot.sendPhoto(
             chatId = ChatId.Companion.fromId(id.chatId),
@@ -72,7 +77,9 @@ class MessageService(
             log.info("User $id is now waiting for image")
         }, { e ->
             logErrorInCommand(commandState.cmd, e)
-            userService.getUser(id.userId).userState = commandState.stateToReturn
+            userService.saveUser(id.userId) { u ->
+                u.userState = commandState.stateToReturn
+            }
         })
     }
 
@@ -85,7 +92,10 @@ class MessageService(
     }
 
     fun sendGenerationCompletionMessage(bot: Bot, id: TelegramId, successMessage: String) {
-        userService.getUser(id.userId).userState = UserState.READY_FOR_CMD
+        userService.saveUser(id.userId) { u ->
+            u.userState = UserState.READY_FOR_CMD
+        }
+
         bot.sendMessage(
             chatId = ChatId.fromId(id.chatId),
             text = General.Text.NEXT_STEP,
@@ -105,7 +115,9 @@ class MessageService(
     }
 
     private fun sendError(id: TelegramId, bot: Bot) {
-        userService.getUser(id.userId).userState = UserState.READY_FOR_CMD
+        userService.saveUser(id.userId) { u ->
+            u.userState = UserState.READY_FOR_CMD
+        }
 
         bot.sendMessage(
             chatId = ChatId.fromId(id.chatId),
@@ -114,13 +126,18 @@ class MessageService(
         )
     }
 
-    fun sendMessageOnWaitingForPhoto(bot: Bot, id: TelegramId, photos: List<Photo>?, waitingPhotoState: WaitingPhotoState) {
+    fun sendMessageOnWaitingForPhoto(
+        bot: Bot,
+        id: TelegramId,
+        photos: List<Photo>?,
+        waitingPhotoState: WaitingPhotoState
+    ) {
         if (photos != null) {
-            val user = userService.getUser(id.userId)
             // TODO Add validation
-            user.photos += photos
-            user.userState = waitingPhotoState.newState
-            userService.saveUser(id.userId)
+            userService.saveUser(id.userId) { u ->
+                u.photos += photos.map { it.toEntity() }
+                u.userState = waitingPhotoState.newState
+            }
 
             bot.sendMessage(
                 chatId = ChatId.fromId(id.chatId),
