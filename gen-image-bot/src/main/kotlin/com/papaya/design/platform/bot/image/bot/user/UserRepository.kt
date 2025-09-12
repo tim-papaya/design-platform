@@ -1,6 +1,7 @@
 package com.papaya.design.platform.bot.image.bot.user
 
 import com.papaya.design.platform.bot.image.bot.domain.UserEntity
+import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 

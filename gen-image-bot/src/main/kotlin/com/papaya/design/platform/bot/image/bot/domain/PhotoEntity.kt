@@ -14,10 +14,6 @@ class PhotoEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     var uniqueId: Long = 0
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_unique_id", nullable = false)
-    lateinit var userUniqueId: UserEntity
-
     lateinit var fileId: String
     lateinit var fileUniqueId: String
 }

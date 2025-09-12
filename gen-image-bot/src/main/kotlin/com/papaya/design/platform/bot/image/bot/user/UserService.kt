@@ -8,7 +8,5 @@ interface UserService {
 
     fun getUserOrNull(userId: Long): User?
 
-    fun saveUser(user: User, changeMapper: (user: UserEntity) -> Unit = {}): User
-
     fun saveUser(userId: Long, changeMapper: (UserEntity) -> Unit = {}): User
 }

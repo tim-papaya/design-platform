@@ -1,12 +1,15 @@
 package com.papaya.design.platform.bot.image.bot.domain
 
 import com.papaya.design.platform.ai.openai.OpenAiImageService
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import org.hibernate.generator.EventType
 
@@ -18,17 +21,22 @@ class UserEntity {
 
     var userId: Long = 0
 
-    @Enumerated( value = EnumType.STRING)
+    @Enumerated(value = EnumType.STRING)
     var userState: UserState = UserState.READY_FOR_CMD
 
-    @Enumerated( value = EnumType.STRING)
+    @Enumerated(value = EnumType.STRING)
     var qualityPreset: OpenAiImageService.QualityPreset = OpenAiImageService.QualityPreset.AVERAGE
 
     var generationsNumber: Int = 0
 
     var userPrompt: String? = null
 
-    @OneToMany
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE],
+        orphanRemoval = true
+    )
+    @JoinColumn(name = "user_unique_id", nullable = false)
     var photos: List<PhotoEntity> = listOf()
 }
 

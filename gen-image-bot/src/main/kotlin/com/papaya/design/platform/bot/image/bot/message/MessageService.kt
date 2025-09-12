@@ -65,7 +65,7 @@ class MessageService(
         }
 
         val result = bot.sendPhoto(
-            chatId = ChatId.Companion.fromId(id.chatId),
+            chatId = ChatId.fromId(id.chatId),
             caption = commandState.textToShow,
             replyMarkup = onlyBackKeyboard(),
             photo = TelegramFile.ByByteArray(

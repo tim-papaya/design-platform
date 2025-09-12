@@ -52,6 +52,7 @@ fun prepareForExtendedRealisticGeneration(): KeyboardReplyMarkup {
         keyboard = listOf(
             listOf(
                 KeyboardButton(EXTENDED_REALISTIC_INTERIOR_READY_FOR_GENERATION.text),
+                KeyboardButton(CANCEL.text),
             )
         ),
         resizeKeyboard = true,

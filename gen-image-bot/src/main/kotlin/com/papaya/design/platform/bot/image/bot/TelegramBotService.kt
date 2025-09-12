@@ -26,11 +26,13 @@ import com.papaya.design.platform.bot.image.bot.user.UserService
 import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 
 private val log = KotlinLogging.logger { }
 
 @Service
+@Profile("prod")
 class TelegramBotService(
     @Value("\${telegram.api-key}")
     private val apiKey: String,
@@ -78,6 +80,7 @@ class TelegramBotService(
                         u.photos = listOf()
                     }
                     messageService.sendGenerationCompletionMessage(bot, id, "Return to main menu")
+                    return@message
                 }
 
                 when (user.userState) {
@@ -131,7 +134,7 @@ class TelegramBotService(
                             bot.sendMessage(
                                 chatId = ChatId.fromId(id.chatId),
                                 text = RealisticInterior.Text.WAITING_FOR_IMAGE,
-                                replyMarkup = removeKeyboard(),
+                                replyMarkup = onlyBackKeyboard(),
                             )
                         }
                     }
@@ -310,8 +313,7 @@ class TelegramBotService(
     private fun MessageHandlerEnvironment.extractPhotoFromMessage(user: User): List<Photo>? = message.photo
         ?.sortedBy { it.fileSize }
         ?.map {
-            //TODO Remove additional logging
-            log.info { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
+            log.debug { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
             it
         }?.let { photoSizeList ->
             if (user.qualityPreset != HIGH) {

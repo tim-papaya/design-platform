@@ -8,15 +8,15 @@ import mu.KotlinLogging
 import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Lazy
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 private val log = KotlinLogging.logger { }
 
 @Service
 class CachedUserService(
     private val userRepository: UserRepository,
-    @Lazy
-    private val self: UserService
 ) : UserService {
 
     @Cacheable(value = ["users"], key = "#userId")
@@ -35,27 +35,16 @@ class CachedUserService(
         return result?.toModel()
     }
 
-    @CachePut(value = ["users"], key = "#user.userId")
-    override fun saveUser(
-        user: User,
-        changeMapper: (UserEntity) -> Unit
-    ): User {
-        log.debug { "Add user ${user.userId} to db" }
-        return userRepository
-            .save(user.toEntity().also { changeMapper.invoke(it) })
-            .toModel()
-    }
-
     @CachePut(value = ["users"], key = "#userId")
     override fun saveUser(
         userId: Long,
         changeMapper: (UserEntity) -> Unit
     ): User {
         log.debug { "Add user $userId to db" }
-        return userRepository.save(
-            self.getUserOrNull(userId)
-                .let { user -> user?.toEntity() ?: UserEntity().also { it.userId = userId } }
-                .also { changeMapper.invoke(it) })
-            .toModel()
+        val entity = userRepository.findByUserId(userId)
+            .let { userEntity -> userEntity ?: UserEntity().also { it.userId = userId } }
+            .also { changeMapper.invoke(it) }
+
+        return userRepository.save(entity).toModel()
     }
 }
