@@ -5,12 +5,15 @@ object General {
         const val START = "Привет! Я помогу тебе найти подходящего подрядчика, или ты хочешь поделиться контактами мастера на все руки?"
         const val NEXT_STEP = "Что делаем дальше?"
         const val CHOOSE_CATEGORY = "Выберите категорию"
+        const val CHOOSE_CONTRACTOR = "Выберите подрядчика"
         const val ADD_CATEGORY = "Выберите категорию или введите новую"
         const val ADD_NAME = "Введите имя"
         const val ADD_PHONE = "Введите телефон"
         const val ADD_LINK = "Введите ссылку"
         const val ADD_COMMENT = "Введите комментарий"
-        const val FINISH_ADDING_CONTRACTOR = "Проверьте введенные данные"
+        const val FINISH_ADDING_CONTRACTOR = "Закончили с подготовкой, нажмите далее"
+        const val ADDED_NEW_CONTRACTOR = "Подрядчик добавлен"
+        const val CHOOSE_FIELD_TO_EDIT = "В разработке"
     }
 
     object Error {

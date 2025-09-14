@@ -10,24 +10,50 @@ fun createMainMenuKeyboard() =
     InlineKeyboardMarkup.create(
         listOf(
             listOf(CallbackData(ContractorTelegramCommand.ADD_CONTRACTOR.btnText, ContractorUserState.ADD_NAME.name)),
-            listOf(CallbackData(ContractorTelegramCommand.EDIT_CONTRACTOR.btnText, ContractorUserState.CHOOSE_FIELD_TO_EDIT.name)),
-            listOf(CallbackData(ContractorTelegramCommand.VIEW_CONTRACTORS.btnText, ContractorUserState.ADD_CATEGORY.name)),
+            listOf(
+                CallbackData(
+                    ContractorTelegramCommand.EDIT_CONTRACTOR.btnText,
+                    ContractorUserState.CHOOSE_FIELD_TO_EDIT.name
+                )
+            ),
+            listOf(
+                CallbackData(
+                    ContractorTelegramCommand.VIEW_CONTRACTORS.btnText,
+                    ContractorUserState.CHOOSE_CATEGORY.name
+                )
+            ),
         )
     )
 
-fun createNextStepAndBackMenu(nextState: ContractorUserState, previousState: ContractorUserState) =
-    InlineKeyboardMarkup.create(
+fun createNextStepAndBackMenu(
+    previousState: ContractorUserState,
+    nextState: ContractorUserState? = null
+): InlineKeyboardMarkup {
+    return if (nextState != null) {
+        InlineKeyboardMarkup.create(
+            listOf(
+                listOf(CallbackData(GeneralTelegramCommand.NEXT.btnText, nextState.name)),
+                listOf(CallbackData(GeneralTelegramCommand.BACK.btnText, previousState.name)),
+                listOf(CallbackData(GeneralTelegramCommand.MAIN_MENU.btnText, ContractorUserState.READY_FOR_CMD.name)),
+            )
+        )
+    } else InlineKeyboardMarkup.create(
         listOf(
-            listOf(CallbackData(GeneralTelegramCommand.NEXT.btnText, nextState.name)),
             listOf(CallbackData(GeneralTelegramCommand.BACK.btnText, previousState.name)),
             listOf(CallbackData(GeneralTelegramCommand.MAIN_MENU.btnText, ContractorUserState.READY_FOR_CMD.name)),
         )
     )
+}
 
 fun createListMarkup(categories: List<String>) =
     InlineKeyboardMarkup.create(
         categories.map { listOf(CallbackData(it, it)) } +
                 listOf(
-                    listOf(CallbackData(GeneralTelegramCommand.MAIN_MENU.btnText, ContractorUserState.READY_FOR_CMD.name))
+                    listOf(
+                        CallbackData(
+                            GeneralTelegramCommand.MAIN_MENU.btnText,
+                            ContractorUserState.READY_FOR_CMD.name
+                        )
+                    )
                 )
     )

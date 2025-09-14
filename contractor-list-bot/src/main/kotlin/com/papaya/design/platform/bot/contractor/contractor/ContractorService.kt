@@ -1,9 +1,13 @@
 package com.papaya.design.platform.bot.contractor.contractor
 
 import jakarta.transaction.Transactional
+import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
+import kotlin.math.log
+
+private val log = KotlinLogging.logger { }
 
 @Service
 class ContractorService(
@@ -21,18 +25,22 @@ class ContractorService(
     fun getContractorNamesByCategory(category: String) =
         contractorRepository.findByCategory(category).map { it.toModel() }.map { it.name }
 
-    fun addContractor(name: String, userId: Long) {
+    fun createContractor(name: String, userId: Long) {
         contractorDrafts[name] = ContractorEntity().apply {
-            addedByUserId = userId
+            this.name = name
+            this.addedByUserId = userId
         }
     }
 
     fun saveDraftIfExists(userId: Long): Boolean {
         val draft = contractorDrafts.values.find { it.addedByUserId == userId }
 
+        log.info{ "Saving draft $draft"}
+
         return if (draft == null) false
         else {
             contractorRepository.save(draft)
+            contractorDrafts.remove(draft.name)
             true
         }
     }
@@ -40,7 +48,10 @@ class ContractorService(
     @Transactional
     fun changeContractor(name: String, changeMapper: (ContractorEntity) -> Unit) {
         val draft = contractorDrafts[name]
-        if (draft != null) changeMapper.invoke(draft)
+        if (draft != null) {
+            changeMapper.invoke(draft)
+            return
+        }
 
         contractorRepository.findByName(name)
             .also {
@@ -52,7 +63,10 @@ class ContractorService(
     @Transactional
     fun changeContractor(userId: Long, changeMapper: (ContractorEntity) -> Unit) {
         val draft = contractorDrafts.values.find { it.addedByUserId == userId }
-        if (draft != null) changeMapper.invoke(draft)
+        if (draft != null) {
+            changeMapper.invoke(draft)
+            return
+        }
 
         contractorRepository.findByAddedByUserId(userId)
             .also {
