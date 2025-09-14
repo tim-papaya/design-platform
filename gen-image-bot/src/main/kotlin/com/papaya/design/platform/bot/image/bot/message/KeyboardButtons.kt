@@ -18,6 +18,7 @@ enum class KeyboardInputButton(val text: String) {
     KITCHEN("Столовая"),
     BEDROOM("Спальня"),
     GUESTROOM("Гостинная"),
+    SUPPORT("Поддержка")
 }
 
 fun createMainKeyboard(): KeyboardReplyMarkup {

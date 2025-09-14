@@ -39,6 +39,8 @@ class TelegramBotService(
     private val userService: UserService,
     private val messageService: MessageService,
     private val imageMessageService: ImageMessageService,
+    @Value("\${support.admin.id}")
+    private val supportId: Long,
 ) : BotService {
 
     private val bot = bot {
@@ -54,6 +56,10 @@ class TelegramBotService(
                     id,
                     StartWaitingForImageCommandState.START_REALISTIC_INTERIOR_GENERATION
                 )
+            }
+            command(TelegramCommand.SUPPORT.text) {
+                val id = message.telegramId()
+                bot.sendMessage(ChatId.fromId(supportId), "User ${message.chat.username}:${id.userId} send: ${message.text}")
             }
             command(TelegramCommand.LOW_QUALITY.text) {
                 val id = message.telegramId()

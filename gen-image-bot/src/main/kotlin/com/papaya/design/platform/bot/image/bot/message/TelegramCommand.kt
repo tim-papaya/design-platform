@@ -10,5 +10,6 @@ enum class TelegramCommand(
     ROOM_UPGRADE_CMD("room_upgrade"),
     LOW_QUALITY("low_quality"),
     HIGH_QUALITY("high_quality"),
-    AVERAGE_QUALITY("average_quality")
+    AVERAGE_QUALITY("average_quality"),
+    SUPPORT("support"),
 }
