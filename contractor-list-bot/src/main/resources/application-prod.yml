@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    hikari:
+#      TODO FOR PROD AT LEAST 10
+      maximum-pool-size: 2
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        default_schema: image_bot
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+      hibernate.naming.physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    default-schema: image_bot
+    schemas: image_bot
+    create-schemas: true
+    # Если база уже непустая и вы начинаете вести миграции с текущего состояния:
+    # baseline-on-migrate: true
+    # baseline-version: 0
