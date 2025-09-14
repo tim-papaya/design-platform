@@ -1,9 +1,5 @@
 package com.papaya.design.platform.bot.contractor.user
 
-import com.papaya.design.platform.bot.contractor.tg.jpa.user.User
-import com.papaya.design.platform.bot.contractor.tg.jpa.user.UserEntity
-import com.papaya.design.platform.bot.contractor.tg.jpa.user.UserService
-import com.papaya.design.platform.bot.contractor.tg.jpa.user.toModel
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 
@@ -16,7 +12,7 @@ class SimpleUserService : UserService {
         users.getValue(userId)
 
     override fun getUserOrNull(userId: Long): User? =
-        users.getValue(userId)
+        users.get(userId)
 
     override fun saveUser(
         userId: Long,

@@ -1,4 +1,4 @@
-package com.papaya.design.platform.bot.contractor.tg.jpa.user
+package com.papaya.design.platform.bot.contractor.user
 
 interface UserService {
     fun getUser(userId: Long): User

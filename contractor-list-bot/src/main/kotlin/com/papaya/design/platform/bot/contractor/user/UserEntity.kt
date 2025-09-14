@@ -1,4 +1,4 @@
-package com.papaya.design.platform.bot.contractor.tg.jpa.user
+package com.papaya.design.platform.bot.contractor.user
 
 import jakarta.persistence.*
 import jakarta.persistence.Entity

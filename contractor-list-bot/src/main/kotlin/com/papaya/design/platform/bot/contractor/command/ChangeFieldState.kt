@@ -1,7 +1,7 @@
 package com.papaya.design.platform.bot.contractor.command
 
-import com.papaya.design.platform.bot.contractor.tg.jpa.user.ContractorUserState
 import com.papaya.design.platform.bot.contractor.General
+import com.papaya.design.platform.bot.contractor.user.ContractorUserState
 
 enum class ChangeFieldState(
     val currentState: ContractorUserState,
