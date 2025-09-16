@@ -5,7 +5,6 @@ import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
-import kotlin.math.log
 
 private val log = KotlinLogging.logger { }
 
@@ -16,7 +15,7 @@ class ContractorService(
     private val contractorDrafts = ConcurrentHashMap<String, ContractorEntity>()
 
     fun getContractor(name: String): Contractor? =
-        contractorRepository.findByName(name).toModel()
+        contractorRepository.findByName(name)?.toModel()
 
     fun getContractor(userId: Long): Contractor? =
         contractorDrafts.values.find { it.addedByUserId == userId }?.toModel()
@@ -45,19 +44,10 @@ class ContractorService(
         }
     }
 
-    @Transactional
-    fun changeContractor(name: String, changeMapper: (ContractorEntity) -> Unit) {
-        val draft = contractorDrafts[name]
-        if (draft != null) {
-            changeMapper.invoke(draft)
-            return
+    fun removeDraft(userId: Long) {
+        contractorDrafts.values.find { it.addedByUserId == userId }?.also {
+            contractorDrafts.remove(it.name)
         }
-
-        contractorRepository.findByName(name)
-            .also {
-                changeMapper.invoke(it)
-                contractorRepository.save(it)
-            }
     }
 
     @Transactional

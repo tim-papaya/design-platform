@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository
 @Repository
 interface ContractorRepository : CrudRepository<ContractorEntity, Long> {
 
-    fun findByName(name: String): ContractorEntity
+    fun findByName(name: String): ContractorEntity?
 
     fun findByAddedByUserId(userId: Long): ContractorEntity
 

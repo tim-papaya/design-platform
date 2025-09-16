@@ -9,17 +9,17 @@ import com.papaya.design.platform.bot.tg.core.command.GeneralTelegramCommand
 fun createMainMenuKeyboard() =
     InlineKeyboardMarkup.create(
         listOf(
+            listOf(
+                CallbackData(
+                    ContractorTelegramCommand.VIEW_CONTRACTORS.btnText,
+                    ContractorUserState.CHOOSE_CATEGORY.name
+                )
+            ),
             listOf(CallbackData(ContractorTelegramCommand.ADD_CONTRACTOR.btnText, ContractorUserState.ADD_NAME.name)),
             listOf(
                 CallbackData(
                     ContractorTelegramCommand.EDIT_CONTRACTOR.btnText,
                     ContractorUserState.CHOOSE_FIELD_TO_EDIT.name
-                )
-            ),
-            listOf(
-                CallbackData(
-                    ContractorTelegramCommand.VIEW_CONTRACTORS.btnText,
-                    ContractorUserState.CHOOSE_CATEGORY.name
                 )
             ),
         )
