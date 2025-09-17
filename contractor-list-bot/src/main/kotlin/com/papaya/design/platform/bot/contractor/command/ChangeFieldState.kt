@@ -21,7 +21,7 @@ enum class ChangeFieldState(
         ContractorUserState.ADD_LINK,
         General.Text.ADD_PHONE,
         false,
-        General.Text.NEXT_STEP,
+        General.Text.MAIN_MENU_NEXT_STEP,
     ),
     ADD_PHONE(
         ContractorUserState.ADD_PHONE,
