@@ -1,10 +1,7 @@
 package com.papaya.design.platform.bot.contractor.contractor
 
-import jakarta.transaction.Transactional
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.set
 
 private val log = KotlinLogging.logger { }
 

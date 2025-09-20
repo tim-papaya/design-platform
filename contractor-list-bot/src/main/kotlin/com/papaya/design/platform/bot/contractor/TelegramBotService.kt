@@ -7,14 +7,18 @@ import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
-import com.papaya.design.platform.bot.contractor.command.ChangeFieldState
+import com.papaya.design.platform.bot.contractor.General.Text.toText
 import com.papaya.design.platform.bot.contractor.contractor.ContractorDraftService
 import com.papaya.design.platform.bot.contractor.contractor.ContractorEntity
 import com.papaya.design.platform.bot.contractor.contractor.ContractorService
+import com.papaya.design.platform.bot.contractor.contractor.toModel
 import com.papaya.design.platform.bot.contractor.message.MessageService
+import com.papaya.design.platform.bot.contractor.user.AddFieldUserState.nextAddFieldState
+import com.papaya.design.platform.bot.contractor.user.AddFieldUserState.previousAddFieldState
 import com.papaya.design.platform.bot.contractor.user.ContractorUserState
 import com.papaya.design.platform.bot.contractor.user.User
 import com.papaya.design.platform.bot.contractor.user.UserService
+import com.papaya.design.platform.bot.contractor.user.containsContractorUserState
 import com.papaya.design.platform.bot.tg.core.command.GeneralTelegramCommand
 import com.papaya.design.platform.bot.tg.core.command.message.TelegramId
 import com.papaya.design.platform.bot.tg.core.command.message.telegramId
@@ -44,27 +48,21 @@ class TelegramBotService(
         dispatch {
             command(GeneralTelegramCommand.START_CMD.cmdText) {
                 val id = message.telegramId()
-                bot.sendMessage(
-                    chatId = ChatId.fromId(id.chatId),
-                    text = General.Text.START,
-                    replyMarkup = createMainMenuKeyboard()
-                )
+                messageService.sendMessage(id, General.Text.START, { createMainMenuKeyboard() })
             }
             callbackQuery {
                 val userId = callbackQuery.from.id
+                val chatId = callbackQuery.message?.chat?.id ?: return@callbackQuery
+                val id = TelegramId(userId, chatId)
+
                 try {
                     val messageText = callbackQuery.data ?: return@callbackQuery
-                    val chatId = callbackQuery.message?.chat?.id ?: return@callbackQuery
-                    val id = TelegramId(userId, chatId)
-                    val user = userService.getUserOrNull(id.userId) ?: userService.saveUser(id.userId)
-
-
+                    val user = userService.getUserOrNull(id.userId)
+                        ?: userService.saveUser(id.userId) { u -> u.name = callbackQuery.from.username }
                     checkInput(user, messageText, id)
                 } catch (e: Exception) {
                     log.error(e) { "Error at callback thread" }
-                    userService.saveUser(userId) { u ->
-                        u.userState = ContractorUserState.READY_FOR_CMD
-                    }
+                    messageService.sendMainMenuMessage(id, General.Error.ERROR_GENERAL)
                 }
 
             }
@@ -72,36 +70,22 @@ class TelegramBotService(
                 val id = message.telegramId()
                 try {
                     val messageText = message.text ?: return@message
-                    val user = userService.getUserOrNull(id.userId) ?: userService.saveUser(id.userId)
+                    val user = userService.getUserOrNull(id.userId)
+                        ?: userService.saveUser(id.userId) { u -> u.name = message.chat.username }
 
-                    if (messageText == GeneralTelegramCommand.MAIN_MENU.btnText) {
-                        userService.saveUser(id.userId) { u ->
-                            u.userState = ContractorUserState.READY_FOR_CMD
-                        }
+                    when (messageText) {
+                        GeneralTelegramCommand.MAIN_MENU.btnText ->
+                            messageService.sendMainMenuMessage(id)
 
-                        bot.sendMessage(
-                            chatId = ChatId.fromId(id.chatId),
-                            text = General.Text.MAIN_MENU_NEXT_STEP,
-                            replyMarkup = createMainMenuKeyboard()
-                        )
-                        return@message
+                        else -> checkInput(user, messageText, id)
                     }
-
-                    if (messageText == "/${GeneralTelegramCommand.START_CMD.cmdText}") {
-                        return@message
-                    }
-
-                    checkInput(user, messageText, id)
-
                 } catch (e: Exception) {
                     log.error(e) { "Error at message thread" }
-                    userService.saveUser(id.userId) { u ->
-                        u.userState = ContractorUserState.READY_FOR_CMD
-                    }
+                    messageService.sendMainMenuMessage(id, General.Error.ERROR_GENERAL)
                 }
             }
         }
-    }
+    }.also { messageService.bot = it }
 
     private fun checkInput(
         user: User,
@@ -109,149 +93,125 @@ class TelegramBotService(
         id: TelegramId
     ) {
         when (user.userState) {
-            ContractorUserState.READY_FOR_CMD -> {
+            ContractorUserState.MAIN_MENU_READY_FOR_CMD -> {
                 when (messageText) {
-                    ContractorUserState.ADD_NAME.name -> {
-                        userService.saveUser(id.userId) { u ->
-                            u.userState = ContractorUserState.ADD_NAME
-                        }
-
-                        bot.sendMessage(
-                            chatId = ChatId.fromId(id.chatId),
-                            text = General.Text.ADD_NAME,
-                            replyMarkup = createNextStepAndBackMenu(
-                                ContractorUserState.READY_FOR_CMD
+                    ContractorUserState.ADD_NAME.name ->
+                        messageService.sendStateMessage(id, ContractorUserState.ADD_NAME, {
+                            createNextStepAndBackMenu(
+                                ContractorUserState.MAIN_MENU_READY_FOR_CMD
                             )
-                        )
-                    }
+                        })
 
-                    ContractorUserState.CHOOSE_CATEGORY.name -> {
-                        userService.saveUser(id.userId) { u ->
-                            u.userState = ContractorUserState.CHOOSE_CATEGORY
-                        }
+                    ContractorUserState.CHOOSE_CATEGORY.name ->
+                        messageService.sendStateMessage(id, ContractorUserState.CHOOSE_CATEGORY, {
+                            createListMarkup(contractorService.getCategories())
+                        })
 
-                        bot.sendMessage(
-                            chatId = ChatId.fromId(id.chatId),
-                            text = General.Text.CHOOSE_CATEGORY,
-                            replyMarkup = createListMarkup(contractorService.getCategories())
-                        )
-                    }
-
-                    ContractorUserState.CHOOSE_FIELD_TO_EDIT.name -> {
-                        bot.sendMessage(
-                            chatId = ChatId.fromId(id.chatId),
-                            text = General.Text.CHOOSE_FIELD_TO_EDIT,
-                            replyMarkup = createMainMenuKeyboard()
-                        )
-                    }
+                    ContractorUserState.CHOOSE_FIELD_TO_EDIT.name ->
+                        messageService.sendStateMessage(id, ContractorUserState.CHOOSE_FIELD_TO_EDIT, {
+                            createMainMenuKeyboard()
+                        })
 
                     else -> messageService.sendMainMenuMessage(id)
                 }
             }
 
-            ContractorUserState.ADD_NAME -> {
-                checkNameField(messageText, id)
-            }
+            ContractorUserState.ADD_NAME -> checkField(
+                messageText, id, ContractorUserState.ADD_NAME,
+                { _: ContractorEntity, _: String -> },
+                nextReplyMarkup = { createListMarkup(contractorService.getCategories()) },
+                onSuccessful = { s: String -> contractorDraftService.createContractorDraft(s, id.userId) }
+            )
 
-            ContractorUserState.ADD_CATEGORY -> {
+            ContractorUserState.ADD_CATEGORY ->
                 checkField(
-                    messageText, id, ChangeFieldState.ADD_CATEGORY,
+                    messageText, id, ContractorUserState.ADD_CATEGORY,
                     { c: ContractorEntity, s: String -> c.category = s },
-                    errorReplyMarkup = {
-                        createListMarkup(contractorService.getCategories())
-                    })
-            }
+                ) {
+                    createListMarkup(contractorService.getCategories())
+                }
 
-            ContractorUserState.ADD_PHONE -> {
+            ContractorUserState.ADD_PHONE ->
                 checkField(
-                    messageText, id, ChangeFieldState.ADD_PHONE,
+                    messageText, id, ContractorUserState.ADD_PHONE,
                     { c: ContractorEntity, s: String -> c.phone = s })
-            }
+
 
             ContractorUserState.ADD_LINK -> {
                 checkField(
-                    messageText, id, ChangeFieldState.ADD_LINK,
+                    messageText, id, ContractorUserState.ADD_LINK,
                     { c: ContractorEntity, s: String -> c.link = s })
                 checkThatPhoneOrLinkIsFilled(id)
             }
 
             ContractorUserState.ADD_COMMENT -> {
                 checkField(
-                    messageText, id, ChangeFieldState.ADD_COMMENT,
+                    messageText, id, ContractorUserState.ADD_COMMENT,
                     { c: ContractorEntity, s: String -> c.comment = s },
-                    nextReplyMarkup = {
-                        createNextStepAndBackMenu(
-                            ContractorUserState.ADD_COMMENT,
-                            ContractorUserState.PREPARE_FOR_FINISH_ADDING_CONTRACTOR
+                    nextReplyMarkup = { InlineKeyboardMarkup.create() },
+                    sendAdditionalMessageOnNext = {
+                        val contractorDraft = contractorDraftService.getContractorDraft(id.userId)
+                        messageService.sendMessage(
+                            id,
+                            contractorDraft?.toModel()?.toText(user) ?: "Contractor draft unknown",
+                            {
+                                createNextStepAndBackMenu(
+                                    ContractorUserState.ADD_COMMENT,
+                                    ContractorUserState.CONFIRM_FINISH_ADDING_CONTRACTOR
+                                )
+                            }
                         )
-                    }
-                )
+                    })
             }
 
-            ContractorUserState.PREPARE_FOR_FINISH_ADDING_CONTRACTOR -> {
+            ContractorUserState.FINISH_ADDING_CONTRACTOR -> {
                 when (messageText) {
-                    ContractorUserState.READY_FOR_CMD.name -> messageService.sendMainMenuMessage(id)
+                    ContractorUserState.MAIN_MENU_READY_FOR_CMD.name -> messageService.sendMainMenuMessage(id)
 
-                    ContractorUserState.ADD_COMMENT.name -> {
-                        userService.saveUser(id.userId) { u ->
-                            u.userState = ContractorUserState.ADD_COMMENT
-                        }
-                        bot.sendMessage(
-                            chatId = ChatId.fromId(id.chatId),
-                            text = General.Text.ADD_COMMENT,
-                            replyMarkup = createNextStepAndBackMenu(
+                    ContractorUserState.ADD_COMMENT.name ->
+                        messageService.sendStateMessage(id, ContractorUserState.ADD_COMMENT, {
+                            createNextStepAndBackMenu(
                                 ContractorUserState.ADD_LINK,
-                                ContractorUserState.PREPARE_FOR_FINISH_ADDING_CONTRACTOR
+                                ContractorUserState.FINISH_ADDING_CONTRACTOR
                             )
-                        )
-                    }
+                        })
 
-                    ContractorUserState.FINISH_ADDING_CONTRACTOR.name -> {
+                    ContractorUserState.CONFIRM_FINISH_ADDING_CONTRACTOR.name -> {
                         if (contractorDraftService.saveDraftIfExists(id.userId)) {
-                            messageService.sendMainMenuMessage(id, General.Text.ADDED_NEW_CONTRACTOR)
+                            messageService.sendMainMenuMessage(id, General.Text.CONFIRM_FINISH_ADDING_CONTRACTOR)
                         } else {
                             messageService.sendMainMenuMessage(id, General.Error.ERROR_ON_SAVING_CONTRACTOR)
                         }
                     }
-
-                    else -> {
-                        val contractor = contractorService.getContractor(id.userId)
-
-                        bot.sendMessage(
-                            chatId = ChatId.fromId(id.chatId),
-                            text = "Новый подрядчик - $contractor",
-                            replyMarkup = createNextStepAndBackMenu(
-                                ContractorUserState.ADD_COMMENT,
-                                ContractorUserState.FINISH_ADDING_CONTRACTOR
-                            )
-                        )
-                    }
                 }
             }
 
-            ContractorUserState.FINISH_ADDING_CONTRACTOR -> {
-                // do nothing here
+            ContractorUserState.CONFIRM_FINISH_ADDING_CONTRACTOR -> {
+                log.error { "Should not go to this section" }
+                messageService.sendMainMenuMessage(id)
             }
 
             ContractorUserState.CHOOSE_CATEGORY -> {
                 log.info { "Choosing category $messageText" }
-                if (contractorService.getCategories().contains(messageText)) {
+                val inputCategory = messageText.trim()
+                when {
+                    inputCategory == ContractorUserState.MAIN_MENU_READY_FOR_CMD.name ->
+                        messageService.sendMainMenuMessage(id)
 
-                    userService.saveUser(id.userId) { u ->
-                        u.userState = ContractorUserState.CHOOSE_CONTRACTOR
-                        u.category = messageText
+                    contractorService.getCategories().contains(messageText) -> {
+
+                        userService.saveUser(id.userId) { u ->
+                            u.userState = ContractorUserState.CHOOSE_CONTRACTOR
+                            u.category = inputCategory
+                        }
+                        messageService.sendStateMessage(id, ContractorUserState.CHOOSE_CONTRACTOR, {
+                            createListMarkup(contractorService.getContractorNamesByCategory(messageText))
+                        })
                     }
-                    bot.sendMessage(
-                        chatId = ChatId.fromId(id.chatId),
-                        text = General.Text.CHOOSE_CONTRACTOR,
-                        replyMarkup = createListMarkup(
-                            contractorService.getContractorNamesByCategory(
-                                messageText
-                            )
-                        )
-                    )
-                } else {
-                    messageService.sendMainMenuMessage(id, General.Error.ERROR_ON_CHOOSING_CATEGORY)
+
+                    else -> {
+                        messageService.sendMainMenuMessage(id, General.Error.ERROR_ON_CHOOSING_CATEGORY)
+                    }
                 }
             }
 
@@ -260,7 +220,7 @@ class TelegramBotService(
                 val contractorName =
                     contractorService.getContractorNamesByCategory(category).find { it == messageText }
                 when {
-                    messageText == ContractorUserState.READY_FOR_CMD.name -> {
+                    messageText == ContractorUserState.MAIN_MENU_READY_FOR_CMD.name -> {
                         messageService.sendMainMenuMessage(id)
                     }
 
@@ -273,7 +233,7 @@ class TelegramBotService(
                                            |Категория: ${contractor.category}
                                            |Телефон: ${contractor.phone}
                                            |Ссылка: ${contractor.link}
-                                           |Кто добавил(а): ${contractor.addedByUserId} 
+                                           |Кто добавил(а): ${userService.getUserOrNull(contractor.addedByUserId)?.name ?: contractor.addedByUserId} 
                                            |Комментарий: ${contractor.comment}""".trimMargin(),
                             replyMarkup = createListMarkup(
                                 contractorService.getContractorNamesByCategory(
@@ -291,123 +251,54 @@ class TelegramBotService(
             ContractorUserState.CHOOSE_FIELD_TO_EDIT -> {
                 messageService.sendMainMenuMessage(id, General.Text.CHOOSE_FIELD_TO_EDIT)
             }
+
         }
     }
 
     private fun checkThatPhoneOrLinkIsFilled(id: TelegramId) {
-        val draft = contractorService.getContractor(id.userId)
+        val draft = contractorDraftService.getContractorDraft(id.userId)
         if (draft != null && draft.link == null && draft.phone == null) {
-            bot.sendMessage(
-                chatId = ChatId.fromId(id.chatId),
-                text = General.Error.ERROR_EMPTY_MAIN_FIELDS,
-                replyMarkup = createNextStepAndBackMenu(
+            messageService.sendStateMessage(id, ContractorUserState.ADD_NAME, {
+                createNextStepAndBackMenu(
                     ContractorUserState.ADD_NAME
                 )
-            )
-        }
-    }
-
-    private fun checkNameField(
-        messageText: String?,
-        id: TelegramId
-    ) {
-        val name = messageText?.trim()
-        when {
-            name == ContractorUserState.READY_FOR_CMD.name -> {
-                userService.saveUser(id.userId) { u ->
-                    u.userState = ContractorUserState.READY_FOR_CMD
-                }
-                messageService.sendMainMenuMessage(id)
-            }
-
-            name == null || ContractorUserState.entries.map { it.name }.contains(name) -> {
-                bot.sendMessage(
-                    chatId = ChatId.fromId(id.chatId),
-                    text = General.Error.ERROR_EMPTY_FIELD,
-                    replyMarkup = createNextStepAndBackMenu(
-                        ContractorUserState.READY_FOR_CMD
-                    )
-                )
-            }
-
-            name.length >= 32 -> {
-                bot.sendMessage(
-                    chatId = ChatId.fromId(id.chatId),
-                    text = General.Error.ERROR_FIELD_SIZE_TOO_LARGE,
-                    replyMarkup = createNextStepAndBackMenu(
-                        ContractorUserState.READY_FOR_CMD
-                    )
-                )
-            }
-
-
-            contractorService.getContractor(name) != null -> {
-                bot.sendMessage(
-                    chatId = ChatId.fromId(id.chatId),
-                    text = General.Error.ERROR_NAME_NOT_UNIQUE,
-                    replyMarkup = createNextStepAndBackMenu(
-                        ContractorUserState.READY_FOR_CMD
-                    )
-                )
-            }
-
-            else -> {
-                contractorDraftService.removeDraft(id.userId)
-                userService.saveUser(id.userId) { u ->
-                    u.userState = ContractorUserState.ADD_CATEGORY
-                }
-
-                contractorDraftService.createContractorDraft(name, id.userId)
-
-                bot.sendMessage(
-                    chatId = ChatId.fromId(id.chatId),
-                    text = General.Text.ADD_CATEGORY,
-                    replyMarkup = createListMarkup(contractorService.getCategories())
-                )
-            }
+            }, General.Error.ERROR_EMPTY_MAIN_FIELDS)
         }
     }
 
     private fun checkField(
         messageText: String?,
         id: TelegramId,
-        changeFieldState: ChangeFieldState,
+        changeFieldState: ContractorUserState,
         changeMapper: (ContractorEntity, String) -> Unit,
         errorReplyMarkup: () -> InlineKeyboardMarkup = {
             createNextStepAndBackMenu(
-                changeFieldState.previousState
+                changeFieldState.previousAddFieldState()
             )
         },
         nextReplyMarkup: () -> InlineKeyboardMarkup = {
             createNextStepAndBackMenu(
-                changeFieldState.currentState
+                changeFieldState
             )
         },
         previousReplyMarkup: () -> InlineKeyboardMarkup = {
             createNextStepAndBackMenu(
-                changeFieldState.previousPreviousState
+                changeFieldState.previousAddFieldState().previousAddFieldState()
             )
         },
-
-        ) {
+        sendAdditionalMessageOnNext: () -> Unit = {},
+        onSuccessful: (String) -> Unit = {},
+    ) {
         val fieldValue = messageText?.trim()
+        val previousState = changeFieldState.previousAddFieldState()
         when {
-            fieldValue == ContractorUserState.READY_FOR_CMD.name ->
+            fieldValue == ContractorUserState.MAIN_MENU_READY_FOR_CMD.name ->
                 messageService.sendMainMenuMessage(id)
 
-            fieldValue == changeFieldState.previousState.name -> {
-                userService.saveUser(id.userId) { u ->
-                    u.userState = changeFieldState.previousState
-                }
-                bot.sendMessage(
-                    chatId = ChatId.fromId(id.chatId),
-                    text = changeFieldState.previousText,
-                    replyMarkup = previousReplyMarkup()
-                )
-            }
+            fieldValue == previousState.name ->
+                messageService.sendStateMessage(id, previousState, previousReplyMarkup)
 
-            !changeFieldState.isOptional &&
-                    (fieldValue == null || ContractorUserState.entries.map { it.name }.contains(fieldValue)) ->
+            !changeFieldState.isOptional && (fieldValue == null || fieldValue.containsContractorUserState()) ->
                 messageService.sendMessage(id, General.Error.ERROR_EMPTY_FIELD, errorReplyMarkup)
 
             fieldValue != null && fieldValue.length >= 32 ->
@@ -417,11 +308,13 @@ class TelegramBotService(
                 val fieldValueWithDefault = fieldValue ?: General.FieldDefault.NO_FIELD_VALUE
                 log.info { "Will add for ${id.userId}, value $fieldValueWithDefault" }
 
+                onSuccessful.invoke(fieldValueWithDefault)
                 contractorDraftService.changeContractorDraft(id.userId) { c ->
                     changeMapper.invoke(c, fieldValueWithDefault)
                 }
 
-                messageService.sendNextStateMessage(id, changeFieldState, nextReplyMarkup)
+                messageService.sendStateMessage(id, changeFieldState.nextAddFieldState(), nextReplyMarkup)
+                sendAdditionalMessageOnNext.invoke()
             }
         }
     }

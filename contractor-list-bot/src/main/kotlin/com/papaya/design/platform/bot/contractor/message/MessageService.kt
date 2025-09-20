@@ -4,22 +4,24 @@ import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.papaya.design.platform.bot.contractor.General
-import com.papaya.design.platform.bot.contractor.command.ChangeFieldState
 import com.papaya.design.platform.bot.contractor.contractor.ContractorDraftService
 import com.papaya.design.platform.bot.contractor.contractor.ContractorService
 import com.papaya.design.platform.bot.contractor.createMainMenuKeyboard
 import com.papaya.design.platform.bot.contractor.user.ContractorUserState
 import com.papaya.design.platform.bot.contractor.user.UserService
 import com.papaya.design.platform.bot.tg.core.command.message.TelegramId
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 
 @Service
+@Lazy
 class MessageService(
-    private val bot: Bot,
     private val userService: UserService,
     private val contractorService: ContractorService,
     private val contractorDraftService: ContractorDraftService
 ) {
+    lateinit var bot: Bot
+
     fun sendMainMenuMessage(id: TelegramId) {
         sendMainMenuMessage(id, General.Text.MAIN_MENU_NEXT_STEP)
     }
@@ -33,25 +35,26 @@ class MessageService(
         )
     }
 
-    fun sendNextStateMessage(
+    fun sendStateMessage(
         id: TelegramId,
-        changeFieldState: ChangeFieldState,
-        nextReplyMarkup: () -> InlineKeyboardMarkup
+        newState: ContractorUserState,
+        newReplyMarkup: () -> InlineKeyboardMarkup,
+        text: String? = null
     ) {
         userService.saveUser(id.userId) { u ->
-            u.userState = changeFieldState.nextState
+            u.userState = newState
         }
         bot.sendMessage(
             chatId = ChatId.fromId(id.chatId),
-            text = changeFieldState.nextStateText,
-            replyMarkup = nextReplyMarkup.invoke()
+            text = text ?: newState.text,
+            replyMarkup = newReplyMarkup.invoke()
         )
     }
 
     fun sendMessage(
         id: TelegramId,
         text: String,
-        replyMarkup: () -> InlineKeyboardMarkup
+        replyMarkup: () -> InlineKeyboardMarkup? = { null }
     ) {
         bot.sendMessage(
             chatId = ChatId.fromId(id.chatId),
@@ -62,7 +65,7 @@ class MessageService(
 
     private fun clearStateForUser(id: TelegramId) {
         userService.saveUser(id.userId) { u ->
-            u.userState = ContractorUserState.READY_FOR_CMD
+            u.userState = ContractorUserState.MAIN_MENU_READY_FOR_CMD
         }
         contractorDraftService.removeDraft(id.userId)
     }

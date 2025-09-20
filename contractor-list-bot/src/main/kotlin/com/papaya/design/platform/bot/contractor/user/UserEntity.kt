@@ -12,10 +12,18 @@ class UserEntity {
 
     var userId: Long = 0
 
-    @Enumerated(value = EnumType.STRING)
-    var userState: ContractorUserState = ContractorUserState.READY_FOR_CMD
+    var name: String? = null
 
+    @Enumerated(value = EnumType.STRING)
+    @Transient
+    var userState: ContractorUserState = ContractorUserState.MAIN_MENU_READY_FOR_CMD
+
+    @Transient
     var category: String? = null
+
+    override fun toString(): String {
+        return "UserEntity(uniqueId=$uniqueId, userId=$userId, name=$name, userState=$userState, category=$category)"
+    }
 
 }
 
@@ -24,4 +32,5 @@ fun UserEntity.toModel() =
         this.userId,
         this.userState,
         this.category,
+        this.name?.let { "@$it" } ?: "Имя не найдено (id: ${this.userId})"
     )

@@ -34,13 +34,13 @@ fun createNextStepAndBackMenu(
             listOf(
                 listOf(CallbackData(GeneralTelegramCommand.NEXT.btnText, nextState.name)),
                 listOf(CallbackData(GeneralTelegramCommand.BACK.btnText, previousState.name)),
-                listOf(CallbackData(GeneralTelegramCommand.MAIN_MENU.btnText, ContractorUserState.READY_FOR_CMD.name)),
+                listOf(CallbackData(GeneralTelegramCommand.MAIN_MENU.btnText, ContractorUserState.MAIN_MENU_READY_FOR_CMD.name)),
             )
         )
     } else InlineKeyboardMarkup.create(
         listOf(
             listOf(CallbackData(GeneralTelegramCommand.BACK.btnText, previousState.name)),
-            listOf(CallbackData(GeneralTelegramCommand.MAIN_MENU.btnText, ContractorUserState.READY_FOR_CMD.name)),
+            listOf(CallbackData(GeneralTelegramCommand.MAIN_MENU.btnText, ContractorUserState.MAIN_MENU_READY_FOR_CMD.name)),
         )
     )
 }
@@ -52,7 +52,7 @@ fun createListMarkup(categories: List<String>) =
                     listOf(
                         CallbackData(
                             GeneralTelegramCommand.MAIN_MENU.btnText,
-                            ContractorUserState.READY_FOR_CMD.name
+                            ContractorUserState.MAIN_MENU_READY_FOR_CMD.name
                         )
                     )
                 )

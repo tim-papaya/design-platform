@@ -1,5 +1,8 @@
 package com.papaya.design.platform.bot.contractor
 
+import com.papaya.design.platform.bot.contractor.contractor.Contractor
+import com.papaya.design.platform.bot.contractor.user.User
+
 object General {
     object Text {
         const val START = "Привет! Помочь найти подходящего подрядчика, или ты хочешь поделиться контактами мастера?"
@@ -11,9 +14,19 @@ object General {
         const val ADD_PHONE = "Введите телефон:\n\nПример: +79151234567\n\nEсли телефона нет, введите \"Нет\""
         const val ADD_LINK = "Введите ссылку:\n\nПример: @Link\nПример: https://google.com\n\nEсли ссылки нет, введите \"Нет\""
         const val ADD_COMMENT = "Введите комментарий/отзыв"
-        const val FINISH_ADDING_CONTRACTOR = "Закончили с подготовкой, нажмите \"Далее\""
-        const val ADDED_NEW_CONTRACTOR = "Подрядчик добавлен, проверьте и нажмите \"Далее\""
+        const val FINISH_ADDING_CONTRACTOR = "Закончили с подготовкой, проверьте и нажмите \"Далее\""
+        const val CONFIRM_FINISH_ADDING_CONTRACTOR = "Подрядчик добавлен"
         const val CHOOSE_FIELD_TO_EDIT = "В разработке"
+
+        fun Contractor.toText(user: User) = """
+             Новый подрядчик:
+             Имя : ${this.name}
+             Категория: ${this.category}
+             Телефон: ${this.phone}
+             Ссылка: ${this.link}
+             Комментарий: ${this.comment}
+             Добавил(а): ${user.name}
+        """.trimIndent()
     }
 
     object FieldDefault {
@@ -21,6 +34,7 @@ object General {
     }
 
     object Error {
+        const val ERROR_GENERAL = "Произошла ошибка, пожалуйста, попробуйте еще раз."
         const val ERROR_EMPTY_FIELD = "Поле не может быть пустым"
         const val ERROR_NAME_NOT_UNIQUE = "Это имя уже есть в базе данных"
         const val ERROR_FIELD_SIZE_TOO_LARGE = "Введенное значение не может быть длиннее 32 символов"

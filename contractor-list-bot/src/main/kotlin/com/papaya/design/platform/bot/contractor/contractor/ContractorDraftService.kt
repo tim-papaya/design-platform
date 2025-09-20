@@ -54,4 +54,7 @@ class ContractorDraftService(
             contractorDrafts.remove(it.name)
         }
     }
+
+    fun getContractorDraft(userId: Long) =
+        contractorDrafts.values.find { it.addedByUserId == userId }
 }
