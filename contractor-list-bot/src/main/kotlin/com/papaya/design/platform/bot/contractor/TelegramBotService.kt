@@ -4,6 +4,7 @@ import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import com.github.kotlintelegrambot.dispatcher.command
+import com.github.kotlintelegrambot.dispatcher.handlers.CommandHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
@@ -36,21 +37,56 @@ private val log = KotlinLogging.logger { }
 class TelegramBotService(
     @Value("\${telegram.api-key}")
     private val apiKey: String,
-    @Value("\${support.admin.id}")
-    private val supportId: Long,
+    @Value("#{'\${support.admin.ids}'.split(',')}")
+    private val rawSupportIds: List<String>,
     private val userService: UserService,
     private val contractorService: ContractorService,
     private val contractorDraftService: ContractorDraftService,
     private val messageService: MessageService,
 ) : BotService {
 
+    private val supportIds = rawSupportIds.map { it.toLong() }.map { TelegramId(it, it) }
+
     private val bot = bot {
         token = apiKey
         dispatch {
-            command(GeneralTelegramCommand.START_CMD.cmdText) {
+            command(GeneralTelegramCommand.GET_ACCESS.cmdText) {
                 val id = message.telegramId()
-                messageService.sendMessage(id, General.Text.START, { createMainMenuKeyboard() })
+                val newUserName = messageWithoutCommand(message.text)
+
+                when {
+                    newUserName == null ->
+                        messageService.sendMessage(id, General.Error.ERROR_MISING_NAME_IN_ACCESS_REQUEST)
+
+                    else -> {
+                        supportIds.forEach {
+                            messageService.sendMessage(
+                                it,
+                                "${General.Text.USER_REQUEST_ACCESS}@${message.from?.username} - $newUserName"
+                            )
+                            messageService.sendMessage(it, "/${GeneralTelegramCommand.ADD_ACCESS.cmdText} ${id.userId}")
+                        }
+                        messageService.sendMessage(id, General.Text.ACCESS_AWAITING)
+                    }
+                }
             }
+            command(GeneralTelegramCommand.ADD_ACCESS.cmdText) {
+                val id = message.telegramId()
+                if (!supportIds.contains(id)) return@command
+
+                val newUserId = messageWithoutCommand(message.text)?.toLongOrNull()
+                when {
+                    newUserId == null ->
+                        messageService.sendMessage(id, General.Error.ERROR_ON_GIVING_ACCESS)
+
+                    else -> {
+                        userService.saveUser(newUserId)
+                        messageService.sendMessage(id, General.Text.ACCESS_GIVEN, { createMainMenuKeyboard() })
+                        messageService.sendMessage(TelegramId(newUserId, newUserId), General.Text.ACCESS_GIVEN)
+                    }
+                }
+            }
+
             callbackQuery {
                 val userId = callbackQuery.from.id
                 val chatId = callbackQuery.message?.chat?.id ?: return@callbackQuery
@@ -58,9 +94,18 @@ class TelegramBotService(
 
                 try {
                     val messageText = callbackQuery.data ?: return@callbackQuery
-                    val user = userService.getUserOrNull(id.userId)
-                        ?: userService.saveUser(id.userId) { u -> u.name = callbackQuery.from.username }
-                    checkInput(user, messageText, id)
+                    val user = getUserAndUpdateUsernameIfRequired(id, callbackQuery.from.username)
+                    when {
+                        messageText.contains(GeneralTelegramCommand.ADD_ACCESS.cmdText)
+                                || messageText.contains(GeneralTelegramCommand.GET_ACCESS.cmdText) ->
+                            return@callbackQuery
+
+                        user == null ->
+                            messageService.sendMessage(id, General.Error.NOT_AUTHORIZED)
+
+                        else ->
+                            checkInput(user, messageText, id)
+                    }
                 } catch (e: Exception) {
                     log.error(e) { "Error at callback thread" }
                     messageService.sendMainMenuMessage(id, General.Error.ERROR_GENERAL)
@@ -71,11 +116,17 @@ class TelegramBotService(
                 val id = message.telegramId()
                 try {
                     val messageText = message.text ?: return@message
-                    val user = userService.getUserOrNull(id.userId)
-                        ?: userService.saveUser(id.userId) { u -> u.name = message.chat.username }
+                    val user = getUserAndUpdateUsernameIfRequired(id, message.from?.username)
 
-                    when (messageText) {
-                        GeneralTelegramCommand.MAIN_MENU.btnText ->
+                    when {
+                        messageText.contains(GeneralTelegramCommand.ADD_ACCESS.cmdText)
+                                || messageText.contains(GeneralTelegramCommand.GET_ACCESS.cmdText) ->
+                            return@message
+
+                        user == null ->
+                            messageService.sendMessage(id, General.Error.NOT_AUTHORIZED)
+
+                        messageText == GeneralTelegramCommand.MAIN_MENU.btnText ->
                             messageService.sendMainMenuMessage(id)
 
                         else -> checkInput(user, messageText, id)
@@ -87,6 +138,13 @@ class TelegramBotService(
             }
         }
     }.also { messageService.bot = it }
+
+
+    private fun getUserAndUpdateUsernameIfRequired(id: TelegramId, currentUsername: String?): User? =
+        userService.getUserOrNull(id.userId)?.also {
+            if (!currentUsername.isNullOrBlank() && it.name != currentUsername)
+                userService.saveUser(id.userId) { u -> u.name = currentUsername }
+        }
 
     private fun checkInput(
         user: User,
@@ -472,3 +530,6 @@ class TelegramBotService(
         log.info { "Telegram bot started" }
     }
 }
+
+private fun messageWithoutCommand(text: String?): String? =
+    text?.trim()?.split(Regex("\\s+"), limit = 2)?.drop(1)?.firstOrNull()
