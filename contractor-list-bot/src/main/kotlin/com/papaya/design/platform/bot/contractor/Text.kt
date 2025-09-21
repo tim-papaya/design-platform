@@ -16,8 +16,8 @@ object General {
         const val ADD_COMMENT = "Введите комментарий/отзыв"
         const val FINISH_ADDING_CONTRACTOR = "Закончили с подготовкой, проверьте и нажмите \"Далее\""
         const val CONFIRM_FINISH_ADDING_CONTRACTOR = "Подрядчик добавлен"
-        const val EDIT = "Редактировать"
-        const val CHOOSE_FIELD_TO_EDIT = "Выберите поле для редактирования"
+        const val EDIT = "Выберите поле для редактирования"
+        const val EDIT_BTN = "Редактировать"
         const val EDIT_SUCCESSFUL = "Поле успешно обновлено"
 
         fun Contractor.toText(user: User) = """

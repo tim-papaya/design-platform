@@ -2,6 +2,7 @@ package com.papaya.design.platform.bot.contractor
 
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton.CallbackData
+import com.papaya.design.platform.bot.contractor.command.ContractorFields
 import com.papaya.design.platform.bot.contractor.command.ContractorTelegramCommand
 import com.papaya.design.platform.bot.contractor.contractor.ContractorService
 import com.papaya.design.platform.bot.contractor.user.ContractorUserState
@@ -68,11 +69,15 @@ fun createListMarkup(
                 )
     )
 
+fun createContractorEditMarkup(contractorService: ContractorService, category: String): InlineKeyboardMarkup =
+    createListMarkup(
+        contractorService.getContractorNamesByCategory(category),
+        before = ContractorUserState.EDIT,
+        beforeText = General.Text.EDIT_BTN
+    )
 
-fun createEditMarkup(contractorService: ContractorService, category: String): InlineKeyboardMarkup = createListMarkup(
-    contractorService.getContractorNamesByCategory(category),
-    before = ContractorUserState.EDIT
-)
+fun createFieldsToEditMarkup(): InlineKeyboardMarkup =
+    createListMarkup(ContractorFields.entries.map { it.text })
 
 private fun createEmptyMarkupIfTextIsNull(before: ContractorUserState?, beforeText: String?): List<List<CallbackData>> =
-    before?.let { listOf(listOf(CallbackData(beforeText?: before.text, before.name))) } ?: listOf(listOf())
+    before?.let { listOf(listOf(CallbackData(beforeText ?: before.text, before.name))) } ?: listOf(listOf())

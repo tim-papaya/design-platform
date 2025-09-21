@@ -227,8 +227,7 @@ class TelegramBotService(
                             else -> {
                                 messageService.sendStateMessage(
                                     id, ContractorUserState.EDIT,
-                                    { createListMarkup(ContractorFields.entries.map { it.text }) },
-                                    General.Text.CHOOSE_FIELD_TO_EDIT
+                                    { createFieldsToEditMarkup() },
                                 )
                             }
                         }
@@ -248,7 +247,7 @@ class TelegramBotService(
                                            |Ссылка: ${contractor.link}
                                            |Кто добавил(а): ${userService.getUserOrNull(contractor.addedByUserId)?.name ?: contractor.addedByUserId} 
                                            |Комментарий: ${contractor.comment}""".trimMargin(),
-                            replyMarkup = createEditMarkup(contractorService, category)
+                            replyMarkup = createContractorEditMarkup(contractorService, category)
                         )
                     }
 
@@ -298,7 +297,8 @@ class TelegramBotService(
                                     {
                                         createListMarkup(
                                             contractorService.getCategories(),
-                                            before = ContractorUserState.EDIT
+                                            before = ContractorUserState.EDIT,
+                                            beforeText = General.Text.EDIT_BTN
                                         )
                                     },
                                     "${ContractorUserState.EDIT_CATEGORY.text}\nТекущее: ${contractor.category}"
@@ -368,7 +368,8 @@ class TelegramBotService(
         val previousState: ContractorUserState = ContractorUserState.EDIT
 
         val category = user.category!!
-        val previousReplyMarkup = { createEditMarkup(contractorService, category) }
+        val contractorReplyMarkup = { createContractorEditMarkup(contractorService, category) }
+        val editFieldReplyMarkup = { createFieldsToEditMarkup() }
         val errorReplyMarkup = createNextStepAndBackMenu(previousState)
 
         when {
@@ -376,7 +377,7 @@ class TelegramBotService(
                 messageService.sendMainMenuMessage(id)
 
             fieldValue == previousState.name ->
-                messageService.sendStateMessage(id, previousState, previousReplyMarkup)
+                messageService.sendStateMessage(id, previousState, editFieldReplyMarkup)
 
             !currentState.isOptional && (fieldValue.containsContractorUserState()) ->
                 messageService.sendMessage(
@@ -393,7 +394,7 @@ class TelegramBotService(
                     changeMapper.invoke(c, fieldValue)
                 }
                 messageService.sendStateMessage(
-                    id, ContractorUserState.CHOOSE_CONTRACTOR, previousReplyMarkup, General.Text.EDIT_SUCCESSFUL
+                    id, ContractorUserState.CHOOSE_CONTRACTOR, contractorReplyMarkup, General.Text.EDIT_SUCCESSFUL
                 )
             }
         }
