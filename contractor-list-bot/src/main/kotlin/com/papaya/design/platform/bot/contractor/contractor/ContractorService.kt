@@ -11,7 +11,7 @@ class ContractorService(
     private val contractorRepository: ContractorRepository
 ) {
     fun getContractor(name: String): Contractor? =
-        contractorRepository.findByName(name)?.toModel()
+        contractorRepository.findByNameIgnoreCase(name)?.toModel()
 
     fun getContractorNamesByCategory(category: String) =
         contractorRepository.findByCategory(category).map { it.toModel() }.map { it.name }
@@ -21,7 +21,7 @@ class ContractorService(
 
     @Transactional
     fun changeContractor(name: String, changeMapper: (ContractorEntity) -> Unit) {
-        contractorRepository.findByName(name)
+        contractorRepository.findByNameIgnoreCase(name)
             ?.also {
                 changeMapper.invoke(it)
                 contractorRepository.save(it)

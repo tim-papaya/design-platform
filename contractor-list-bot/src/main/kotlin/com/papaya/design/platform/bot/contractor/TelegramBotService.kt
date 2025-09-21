@@ -112,12 +112,25 @@ class TelegramBotService(
                 }
             }
 
-            ContractorUserState.ADD_NAME -> checkField(
-                messageText, id, ContractorUserState.ADD_NAME,
-                { _: ContractorEntity, _: String -> },
-                nextReplyMarkup = { createListMarkup(contractorService.getCategories()) },
-                onSuccessful = { s: String -> contractorDraftService.createContractorDraft(s, id.userId) }
-            )
+            ContractorUserState.ADD_NAME -> {
+                val name = messageText.trim()
+                if (contractorService.getContractor(name) != null || contractorDraftService.getContractorDraft(id.userId) != null) {
+                    messageService.sendMainMenuMessage(id, General.Error.ERROR_NAME_NOT_UNIQUE)
+                    return
+                }
+
+                checkField(
+                    messageText, id, ContractorUserState.ADD_NAME,
+                    { _: ContractorEntity, _: String -> },
+                    nextReplyMarkup = { createListMarkup(contractorService.getCategories()) },
+                    invokeBeforeChangeMapper = { s: String ->
+                        contractorDraftService.createContractorDraft(
+                            s,
+                            id.userId
+                        )
+                    }
+                )
+            }
 
             ContractorUserState.ADD_CATEGORY ->
                 checkField(
@@ -247,7 +260,7 @@ class TelegramBotService(
                                            |Ссылка: ${contractor.link}
                                            |Кто добавил(а): ${userService.getUserOrNull(contractor.addedByUserId)?.name ?: contractor.addedByUserId} 
                                            |Комментарий: ${contractor.comment}""".trimMargin(),
-                            replyMarkup = createContractorEditMarkup(contractorService, category)
+                            replyMarkup = createContractorEditMarkup(contractorService, category, contractor.name)
                         )
                     }
 
@@ -368,7 +381,7 @@ class TelegramBotService(
         val previousState: ContractorUserState = ContractorUserState.EDIT
 
         val category = user.category!!
-        val contractorReplyMarkup = { createContractorEditMarkup(contractorService, category) }
+        val contractorReplyMarkup = { createContractorEditMarkup(contractorService, category, user.contractorName!!) }
         val editFieldReplyMarkup = { createFieldsToEditMarkup() }
         val errorReplyMarkup = createNextStepAndBackMenu(previousState)
 
@@ -421,7 +434,7 @@ class TelegramBotService(
             )
         },
         sendAdditionalMessageOnNext: () -> Unit = {},
-        onSuccessful: (String) -> Unit = {},
+        invokeBeforeChangeMapper: (String) -> Unit = {},
     ) {
         val fieldValue = messageText?.trim()
         val previousState = changeFieldState.previousAddFieldState()
@@ -442,7 +455,7 @@ class TelegramBotService(
                 val fieldValueWithDefault = fieldValue ?: General.FieldDefault.NO_FIELD_VALUE
                 log.info { "Will add for ${id.userId}, value $fieldValueWithDefault" }
 
-                onSuccessful.invoke(fieldValueWithDefault)
+                invokeBeforeChangeMapper.invoke(fieldValueWithDefault)
                 contractorDraftService.changeContractorDraft(id.userId) { c ->
                     changeMapper.invoke(c, fieldValueWithDefault)
                 }

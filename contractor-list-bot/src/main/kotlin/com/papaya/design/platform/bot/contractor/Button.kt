@@ -69,9 +69,9 @@ fun createListMarkup(
                 )
     )
 
-fun createContractorEditMarkup(contractorService: ContractorService, category: String): InlineKeyboardMarkup =
+fun createContractorEditMarkup(contractorService: ContractorService, category: String, contractorName: String): InlineKeyboardMarkup =
     createListMarkup(
-        contractorService.getContractorNamesByCategory(category),
+        contractorService.getContractorNamesByCategory(category).filter { it != contractorName },
         before = ContractorUserState.EDIT,
         beforeText = General.Text.EDIT_BTN
     )
