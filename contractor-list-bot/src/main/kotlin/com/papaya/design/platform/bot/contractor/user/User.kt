@@ -4,5 +4,6 @@ data class User(
     val userId: Long,
     val userState: ContractorUserState,
     val category: String?,
-    val name: String
+    val name: String,
+    val contractorName: String?,
 )

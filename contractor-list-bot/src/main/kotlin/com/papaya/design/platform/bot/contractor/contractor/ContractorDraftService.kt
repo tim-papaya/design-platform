@@ -21,19 +21,12 @@ class ContractorDraftService(
         }
     }
 
-    @Transactional
     fun changeContractorDraft(userId: Long, changeMapper: (ContractorEntity) -> Unit) {
         val draft = contractorDrafts.values.find { it.addedByUserId == userId }
         if (draft != null) {
             changeMapper.invoke(draft)
             return
         }
-
-        contractorRepository.findByAddedByUserId(userId)
-            .also {
-                changeMapper.invoke(it)
-                contractorRepository.save(it)
-            }
     }
 
     fun saveDraftIfExists(userId: Long): Boolean {

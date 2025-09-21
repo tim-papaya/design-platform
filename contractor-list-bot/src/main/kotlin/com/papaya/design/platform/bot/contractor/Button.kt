@@ -3,6 +3,7 @@ package com.papaya.design.platform.bot.contractor
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton.CallbackData
 import com.papaya.design.platform.bot.contractor.command.ContractorTelegramCommand
+import com.papaya.design.platform.bot.contractor.contractor.ContractorService
 import com.papaya.design.platform.bot.contractor.user.ContractorUserState
 import com.papaya.design.platform.bot.tg.core.command.GeneralTelegramCommand
 
@@ -16,12 +17,6 @@ fun createMainMenuKeyboard() =
                 )
             ),
             listOf(CallbackData(ContractorTelegramCommand.ADD_CONTRACTOR.btnText, ContractorUserState.ADD_NAME.name)),
-            listOf(
-                CallbackData(
-                    ContractorTelegramCommand.EDIT_CONTRACTOR.btnText,
-                    ContractorUserState.CHOOSE_FIELD_TO_EDIT.name
-                )
-            ),
         )
     )
 
@@ -34,20 +29,35 @@ fun createNextStepAndBackMenu(
             listOf(
                 listOf(CallbackData(GeneralTelegramCommand.NEXT.btnText, nextState.name)),
                 listOf(CallbackData(GeneralTelegramCommand.BACK.btnText, previousState.name)),
-                listOf(CallbackData(GeneralTelegramCommand.MAIN_MENU.btnText, ContractorUserState.MAIN_MENU_READY_FOR_CMD.name)),
+                listOf(
+                    CallbackData(
+                        GeneralTelegramCommand.MAIN_MENU.btnText,
+                        ContractorUserState.MAIN_MENU_READY_FOR_CMD.name
+                    )
+                ),
             )
         )
     } else InlineKeyboardMarkup.create(
         listOf(
             listOf(CallbackData(GeneralTelegramCommand.BACK.btnText, previousState.name)),
-            listOf(CallbackData(GeneralTelegramCommand.MAIN_MENU.btnText, ContractorUserState.MAIN_MENU_READY_FOR_CMD.name)),
+            listOf(
+                CallbackData(
+                    GeneralTelegramCommand.MAIN_MENU.btnText,
+                    ContractorUserState.MAIN_MENU_READY_FOR_CMD.name
+                )
+            ),
         )
     )
 }
 
-fun createListMarkup(categories: List<String>) =
+fun createListMarkup(
+    buttonTexts: List<String>,
+    before: ContractorUserState? = null,
+    beforeText: String? = null
+) =
     InlineKeyboardMarkup.create(
-        categories.map { listOf(CallbackData(it, it)) } +
+        createEmptyMarkupIfTextIsNull(before, beforeText) +
+                buttonTexts.map { listOf(CallbackData(it, it)) } +
                 listOf(
                     listOf(
                         CallbackData(
@@ -57,3 +67,12 @@ fun createListMarkup(categories: List<String>) =
                     )
                 )
     )
+
+
+fun createEditMarkup(contractorService: ContractorService, category: String): InlineKeyboardMarkup = createListMarkup(
+    contractorService.getContractorNamesByCategory(category),
+    before = ContractorUserState.EDIT
+)
+
+private fun createEmptyMarkupIfTextIsNull(before: ContractorUserState?, beforeText: String?): List<List<CallbackData>> =
+    before?.let { listOf(listOf(CallbackData(beforeText?: before.text, before.name))) } ?: listOf(listOf())

@@ -21,8 +21,11 @@ class UserEntity {
     @Transient
     var category: String? = null
 
+    @Transient
+    var contractorName: String? = null
+
     override fun toString(): String {
-        return "UserEntity(uniqueId=$uniqueId, userId=$userId, name=$name, userState=$userState, category=$category)"
+        return "UserEntity(uniqueId=$uniqueId, userId=$userId, name=$name, userState=$userState, category=$category, contractorName=$contractorName)"
     }
 
 }
@@ -32,5 +35,6 @@ fun UserEntity.toModel() =
         this.userId,
         this.userState,
         this.category,
-        this.name?.let { "@$it" } ?: "Имя не найдено (id: ${this.userId})"
+        this.name?.let { "@$it" } ?: "Имя не найдено (id: ${this.userId})",
+        this.contractorName
     )

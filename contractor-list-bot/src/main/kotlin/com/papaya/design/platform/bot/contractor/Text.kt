@@ -16,7 +16,9 @@ object General {
         const val ADD_COMMENT = "Введите комментарий/отзыв"
         const val FINISH_ADDING_CONTRACTOR = "Закончили с подготовкой, проверьте и нажмите \"Далее\""
         const val CONFIRM_FINISH_ADDING_CONTRACTOR = "Подрядчик добавлен"
-        const val CHOOSE_FIELD_TO_EDIT = "В разработке"
+        const val EDIT = "Редактировать"
+        const val CHOOSE_FIELD_TO_EDIT = "Выберите поле для редактирования"
+        const val EDIT_SUCCESSFUL = "Поле успешно обновлено"
 
         fun Contractor.toText(user: User) = """
              Новый подрядчик:
@@ -42,5 +44,6 @@ object General {
         const val ERROR_ON_SAVING_CONTRACTOR = "Ошибка при сохранении подрядчика, пожалуйста обратитесь в поддержку или повторите"
         const val ERROR_ON_CHOOSING_CATEGORY = "Похоже, такой категории не существует, пожалуйста, выберите еще раз"
         const val ERROR_ON_CHOOSING_CONTRACTOR = "Похоже, такого подрядчика не существует, пожалуйста, выберите еще раз"
+        const val ERROR_NOT_YOUR_CONTRACTOR = "Вы не можете редактировать подрядчика, которого добавил кто-то другой"
     }
 }

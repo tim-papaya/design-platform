@@ -40,7 +40,12 @@ enum class ContractorUserState(val text: String, val isOptional: Boolean = true)
     CHOOSE_CATEGORY(General.Text.CHOOSE_CATEGORY),
     CHOOSE_CONTRACTOR(General.Text.CHOOSE_CONTRACTOR),
 
-    CHOOSE_FIELD_TO_EDIT(General.Text.CHOOSE_FIELD_TO_EDIT),
+    EDIT(General.Text.EDIT),
+    EDIT_NAME(General.Text.ADD_NAME, false),
+    EDIT_CATEGORY(General.Text.ADD_CATEGORY, false),
+    EDIT_PHONE(General.Text.ADD_PHONE),
+    EDIT_LINK(General.Text.ADD_LINK),
+    EDIT_COMMENT(General.Text.ADD_COMMENT),
 }
 
 fun String.containsContractorUserState() =

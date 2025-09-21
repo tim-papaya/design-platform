@@ -8,6 +8,7 @@ import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.papaya.design.platform.bot.contractor.General.Text.toText
+import com.papaya.design.platform.bot.contractor.command.ContractorFields
 import com.papaya.design.platform.bot.contractor.contractor.ContractorDraftService
 import com.papaya.design.platform.bot.contractor.contractor.ContractorEntity
 import com.papaya.design.platform.bot.contractor.contractor.ContractorService
@@ -105,11 +106,6 @@ class TelegramBotService(
                     ContractorUserState.CHOOSE_CATEGORY.name ->
                         messageService.sendStateMessage(id, ContractorUserState.CHOOSE_CATEGORY, {
                             createListMarkup(contractorService.getCategories())
-                        })
-
-                    ContractorUserState.CHOOSE_FIELD_TO_EDIT.name ->
-                        messageService.sendStateMessage(id, ContractorUserState.CHOOSE_FIELD_TO_EDIT, {
-                            createMainMenuKeyboard()
                         })
 
                     else -> messageService.sendMainMenuMessage(id)
@@ -220,12 +216,29 @@ class TelegramBotService(
                 val contractorName =
                     contractorService.getContractorNamesByCategory(category).find { it == messageText }
                 when {
-                    messageText == ContractorUserState.MAIN_MENU_READY_FOR_CMD.name -> {
+                    messageText == ContractorUserState.MAIN_MENU_READY_FOR_CMD.name ->
                         messageService.sendMainMenuMessage(id)
+
+                    messageText == ContractorUserState.EDIT.name -> {
+                        when {
+                            contractorName != null && contractorService.getContractor(contractorName)?.addedByUserId != user.userId ->
+                                messageService.sendMainMenuMessage(id, General.Error.ERROR_NOT_YOUR_CONTRACTOR)
+
+                            else -> {
+                                messageService.sendStateMessage(
+                                    id, ContractorUserState.EDIT,
+                                    { createListMarkup(ContractorFields.entries.map { it.text }) },
+                                    General.Text.CHOOSE_FIELD_TO_EDIT
+                                )
+                            }
+                        }
                     }
 
                     contractorName != null -> {
                         val contractor = contractorService.getContractor(contractorName)!!
+                        userService.saveUser(id.userId) { u ->
+                            u.contractorName = contractorName
+                        }
                         bot.sendMessage(
                             chatId = ChatId.fromId(id.chatId),
                             text =
@@ -235,11 +248,7 @@ class TelegramBotService(
                                            |Ссылка: ${contractor.link}
                                            |Кто добавил(а): ${userService.getUserOrNull(contractor.addedByUserId)?.name ?: contractor.addedByUserId} 
                                            |Комментарий: ${contractor.comment}""".trimMargin(),
-                            replyMarkup = createListMarkup(
-                                contractorService.getContractorNamesByCategory(
-                                    category
-                                )
-                            )
+                            replyMarkup = createEditMarkup(contractorService, category)
                         )
                     }
 
@@ -248,10 +257,92 @@ class TelegramBotService(
                 }
             }
 
-            ContractorUserState.CHOOSE_FIELD_TO_EDIT -> {
-                messageService.sendMainMenuMessage(id, General.Text.CHOOSE_FIELD_TO_EDIT)
+            ContractorUserState.EDIT -> {
+                val contractorName = user.contractorName!!
+                val fieldToEdit = messageText.trim()
+                when {
+                    fieldToEdit == ContractorUserState.MAIN_MENU_READY_FOR_CMD.name ->
+                        messageService.sendMainMenuMessage(id)
+
+                    contractorService.getContractor(contractorName)?.addedByUserId != user.userId ->
+                        messageService.sendMainMenuMessage(id, General.Error.ERROR_NOT_YOUR_CONTRACTOR)
+
+                    else -> {
+                        val fieldToEditSelected = ContractorFields.entries.find { it.text == fieldToEdit }
+                        val contractor = contractorService.getContractor(contractorName)!!
+                        when (fieldToEditSelected) {
+                            ContractorFields.NAME ->
+                                messageService.sendStateMessage(
+                                    id, ContractorUserState.EDIT_NAME,
+                                    { createNextStepAndBackMenu(ContractorUserState.EDIT) },
+                                    "${ContractorUserState.EDIT_NAME.text}\nТекущее: ${contractor.name}"
+                                )
+
+                            ContractorFields.PHONE ->
+                                messageService.sendStateMessage(
+                                    id, ContractorUserState.EDIT_PHONE,
+                                    { createNextStepAndBackMenu(ContractorUserState.EDIT) },
+                                    "${ContractorUserState.EDIT_PHONE.text}\nТекущее: ${contractor.phone}"
+                                )
+
+                            ContractorFields.LINK ->
+                                messageService.sendStateMessage(
+                                    id, ContractorUserState.EDIT_LINK,
+                                    { createNextStepAndBackMenu(ContractorUserState.EDIT) },
+                                    "${ContractorUserState.EDIT_LINK.text}\nТекущее: ${contractor.link}"
+                                )
+
+                            ContractorFields.CATEGORY ->
+                                messageService.sendStateMessage(
+                                    id, ContractorUserState.EDIT_CATEGORY,
+                                    {
+                                        createListMarkup(
+                                            contractorService.getCategories(),
+                                            before = ContractorUserState.EDIT
+                                        )
+                                    },
+                                    "${ContractorUserState.EDIT_CATEGORY.text}\nТекущее: ${contractor.category}"
+                                )
+
+                            ContractorFields.COMMENT ->
+                                messageService.sendStateMessage(
+                                    id, ContractorUserState.EDIT_COMMENT,
+                                    { createNextStepAndBackMenu(ContractorUserState.EDIT) },
+                                    "${ContractorUserState.EDIT_COMMENT.text}\nТекущее: ${contractor.comment}"
+                                )
+
+                            else -> {
+                                messageService.sendMainMenuMessage(id, General.Error.ERROR_GENERAL)
+                            }
+                        }
+                    }
+                }
             }
 
+            ContractorUserState.EDIT_NAME ->
+                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_NAME) { c, s ->
+                    c.name = s
+                }
+
+            ContractorUserState.EDIT_CATEGORY ->
+                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_CATEGORY) { c, s ->
+                    c.category = s
+                }
+
+            ContractorUserState.EDIT_PHONE ->
+                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_PHONE) { c, s ->
+                    c.phone = s
+                }
+
+            ContractorUserState.EDIT_LINK ->
+                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_LINK) { c, s ->
+                    c.link = s
+                }
+
+            ContractorUserState.EDIT_COMMENT ->
+                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_COMMENT) { c, s ->
+                    c.comment = s
+                }
         }
     }
 
@@ -263,6 +354,48 @@ class TelegramBotService(
                     ContractorUserState.ADD_NAME
                 )
             }, General.Error.ERROR_EMPTY_MAIN_FIELDS)
+        }
+    }
+
+    private fun checkFieldEdit(
+        messageText: String,
+        id: TelegramId,
+        user: User,
+        currentState: ContractorUserState,
+        changeMapper: (ContractorEntity, String) -> Unit,
+    ) {
+        val fieldValue = messageText.trim()
+        val previousState: ContractorUserState = ContractorUserState.EDIT
+
+        val category = user.category!!
+        val previousReplyMarkup = { createEditMarkup(contractorService, category) }
+        val errorReplyMarkup = createNextStepAndBackMenu(previousState)
+
+        when {
+            fieldValue == ContractorUserState.MAIN_MENU_READY_FOR_CMD.name ->
+                messageService.sendMainMenuMessage(id)
+
+            fieldValue == previousState.name ->
+                messageService.sendStateMessage(id, previousState, previousReplyMarkup)
+
+            !currentState.isOptional && (fieldValue.containsContractorUserState()) ->
+                messageService.sendMessage(
+                    id, General.Error.ERROR_EMPTY_FIELD, { errorReplyMarkup }
+                )
+
+            fieldValue.length >= 32 ->
+                messageService.sendMessage(
+                    id, General.Error.ERROR_FIELD_SIZE_TOO_LARGE, { errorReplyMarkup }
+                )
+
+            else -> {
+                contractorService.changeContractor(user.contractorName!!) { c ->
+                    changeMapper.invoke(c, fieldValue)
+                }
+                messageService.sendStateMessage(
+                    id, ContractorUserState.CHOOSE_CONTRACTOR, previousReplyMarkup, General.Text.EDIT_SUCCESSFUL
+                )
+            }
         }
     }
 
@@ -325,5 +458,3 @@ class TelegramBotService(
         log.info { "Telegram bot started" }
     }
 }
-
-

@@ -66,6 +66,8 @@ class MessageService(
     private fun clearStateForUser(id: TelegramId) {
         userService.saveUser(id.userId) { u ->
             u.userState = ContractorUserState.MAIN_MENU_READY_FOR_CMD
+            u.contractorName = null
+            u.category = null
         }
         contractorDraftService.removeDraft(id.userId)
     }
