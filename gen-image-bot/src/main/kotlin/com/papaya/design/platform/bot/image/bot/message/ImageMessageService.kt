@@ -82,7 +82,6 @@ class ImageMessageService(
                         userPrompt = userPrompt,
                         systemPrompt = commandState.systemPrompt,
                         images = resultPhotos,
-                        qualityPreset = userService.getUser(id.userId).qualityPreset
                     ) { base64Images ->
                         val imageArray = base64Images
                             .map { getDecoder().decode(it) }

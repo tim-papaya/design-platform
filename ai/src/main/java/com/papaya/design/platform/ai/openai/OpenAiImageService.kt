@@ -25,32 +25,20 @@ class OpenAiImageService(
     @Value("\${spring.ai.openai.api-key}") private val apiKey: String,
 ) : AiImageService {
 
-    enum class QualityPreset(val quality: String, val fidelity: String, val outputExtension: String) {
-        LOW("medium", "low", "jpeg"),
-        AVERAGE("high", "high", "jpeg"),
-        HIGH("high", "high", "png"),
-    }
-
     override suspend fun generateImage(
         userPrompt: String?,
         systemPrompt: String,
         images: List<ByteArray>,
-        qualityPreset: QualityPreset,
         callback: (List<String>) -> Unit,
     ) {
-        log.info("Will use quality preset - $qualityPreset")
 
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart("model", "gpt-image-1")
             .addFormDataPart("prompt", "$systemPrompt\n$userPrompt")
-            .addFormDataPart("output_format", qualityPreset.outputExtension)
-            .addFormDataPart("quality", qualityPreset.quality)
-            .apply {
-                if (qualityPreset != QualityPreset.HIGH)
-                    addFormDataPart("size", "1024x1024")
-            }
-            .addFormDataPart("input_fidelity", qualityPreset.fidelity).apply {
+            .addFormDataPart("output_format", "jpeg")
+            .addFormDataPart("quality", "high")
+            .addFormDataPart("input_fidelity", "high").apply {
                 if (images.size == 1) {
                     addFormDataPart(
                         name = "image",

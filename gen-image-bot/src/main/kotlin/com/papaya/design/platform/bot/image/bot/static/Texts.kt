@@ -32,7 +32,8 @@ object RoomUpgrade {
     }
 }
 
-private const val ADDITIONAL_SETTINGS = """Дополнительные настройки - realistic materials, global illumination, 35mm lens."""
+//private const val ADDITIONAL_SETTINGS = """Дополнительные настройки - realistic materials, global illumination, 35mm lens."""
+private const val ADDITIONAL_SETTINGS = ""
 
 object RealisticInterior {
     object Text {

@@ -6,8 +6,6 @@ import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.entities.ChatId
-import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset
-import com.papaya.design.platform.ai.openai.OpenAiImageService.QualityPreset.HIGH
 import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
@@ -59,19 +57,10 @@ class TelegramBotService(
             }
             command(TelegramCommand.SUPPORT.text) {
                 val id = message.telegramId()
-                bot.sendMessage(ChatId.fromId(supportId), "User ${message.chat.username}:${id.userId} send: ${message.text}")
-            }
-            command(TelegramCommand.LOW_QUALITY.text) {
-                val id = message.telegramId()
-                messageService.sendQualityMessage(bot, id, "Выбрано низкое качество генерации", QualityPreset.LOW)
-            }
-            command(TelegramCommand.AVERAGE_QUALITY.text) {
-                val id = message.telegramId()
-                messageService.sendQualityMessage(bot, id, "Выбрано среднее качество генерации", QualityPreset.AVERAGE)
-            }
-            command(TelegramCommand.HIGH_QUALITY.text) {
-                val id = message.telegramId()
-                messageService.sendQualityMessage(bot, id, "Выбрано высокое качество генерации", HIGH)
+                bot.sendMessage(
+                    ChatId.fromId(supportId),
+                    "User ${message.chat.username}:${id.userId} send: ${message.text}"
+                )
             }
             message {
                 val id = TelegramId(message.chat.id, message.userId())
@@ -322,11 +311,7 @@ class TelegramBotService(
             log.debug { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
             it
         }?.let { photoSizeList ->
-            if (user.qualityPreset != HIGH) {
-                photoSizeList.first { it.height >= 300 && it.width >= 300 }
-            } else {
-                photoSizeList.last()
-            }
+            photoSizeList.first { it.height >= 300 && it.width >= 300 }
         }?.let { Photo(it.fileId, it.fileUniqueId) }
         ?.let { listOf(it) }
 
