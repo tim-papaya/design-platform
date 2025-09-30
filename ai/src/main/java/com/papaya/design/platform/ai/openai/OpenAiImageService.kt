@@ -36,7 +36,7 @@ class OpenAiImageService(
             .setType(MultipartBody.FORM)
             .addFormDataPart("model", "gpt-image-1")
             .addFormDataPart("prompt", "$systemPrompt\n$userPrompt")
-            .addFormDataPart("output_format", "jpeg")
+            .addFormDataPart("output_format", "png")
             .addFormDataPart("quality", "high")
             .addFormDataPart("input_fidelity", "high").apply {
                 if (images.size == 1) {

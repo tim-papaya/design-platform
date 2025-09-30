@@ -22,7 +22,6 @@ class MockImageService(
         userPrompt: String?,
         systemPrompt: String,
         images: List<ByteArray>,
-        qualityPreset: OpenAiImageService.QualityPreset,
         callback: (List<String>) -> Unit
     ) {
         val responseFromAi = Thread.currentThread().contextClassLoader.getResource("mock_result_b64.json").readText()

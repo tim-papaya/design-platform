@@ -82,7 +82,7 @@ class TelegramBotService(
                     else -> {
                         userService.saveUser(newUserId)
                         messageService.sendMessage(id, General.Text.ACCESS_GIVEN, { createMainMenuKeyboard() })
-                        messageService.sendMessage(TelegramId(newUserId, newUserId), General.Text.ACCESS_GIVEN)
+                        messageService.sendMessage(TelegramId(newUserId, newUserId), General.Text.ACCESS_GIVEN, { createMainMenuKeyboard() })
                     }
                 }
             }

@@ -24,22 +24,6 @@ class MessageService(
     private val userService: UserService,
     private val imageLoader: ExamplesLocalImageLoader
 ) {
-    fun sendQualityMessage(
-        bot: Bot,
-        id: TelegramId,
-        showMessage: String,
-        preset: OpenAiImageService.QualityPreset
-    ) {
-        userService.saveUser(id.userId) { u ->
-            u.qualityPreset = preset
-        }
-
-        bot.sendMessage(
-            chatId = ChatId.fromId(id.chatId),
-            text = showMessage,
-        )
-        log.info { "Quality selected - $preset by ${id.userId}" }
-    }
 
     fun sendFirstTimeWelcome(
         bot: Bot,

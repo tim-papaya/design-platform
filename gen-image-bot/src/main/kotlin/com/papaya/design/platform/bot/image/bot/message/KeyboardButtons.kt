@@ -9,16 +9,16 @@ enum class KeyboardInputButton(val text: String) {
     GENERATE_REALISTIC_INTERIOR("🖼️ 3D-визуализация по коллажу"),
     GENERATE_EXTENDED_REALISTIC_INTERIOR("🏡 Обновление по вашему фото или описанию"),
     ROOM_UPGRADE("🔼 Обновление с помощью ИИ-алгоритмов"),
-    PLANNED_REALISTIC_INTERIOR("📋 3D-визуализация по мудбоарду"),
+    PLANNED_REALISTIC_INTERIOR("📋 3D-визуализация по мудборду"),
     START("✨ Начать"),
     OPTION_FOR_SELF("🏠 Для себя"),
     OPTION_FOR_RENT("💲 Для аренды"),
     CANCEL("⬆ В главное меню"),
-    EXTENDED_REALISTIC_INTERIOR_READY_FOR_GENERATION("✨ Фото отправлены"),
+    EXTENDED_REALISTIC_INTERIOR_READY_FOR_GENERATION("✨ Готово"),
     KITCHEN("Столовая"),
     BEDROOM("Спальня"),
-    GUESTROOM("Гостинная"),
-    SUPPORT("Поддержка")
+    GUESTROOM("Гостиная"),
+    SUPPORT("Поддержка 🩹")
 }
 
 fun createMainKeyboard(): KeyboardReplyMarkup {

@@ -308,10 +308,12 @@ class TelegramBotService(
     private fun MessageHandlerEnvironment.extractPhotoFromMessage(user: User): List<Photo>? = message.photo
         ?.sortedBy { it.fileSize }
         ?.map {
-            log.debug { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
+            log.info { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
             it
-        }?.let { photoSizeList ->
-            photoSizeList.first { it.height >= 300 && it.width >= 300 }
+//        }?.let { photoSizeList ->
+//            photoSizeList.first { it.height >= 300 && it.width >= 300 }
+        }?.let {
+            it.last()
         }?.let { Photo(it.fileId, it.fileUniqueId) }
         ?.let { listOf(it) }
 
