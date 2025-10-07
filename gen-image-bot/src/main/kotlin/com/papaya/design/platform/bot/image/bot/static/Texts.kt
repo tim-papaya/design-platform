@@ -1,5 +1,8 @@
 package com.papaya.design.platform.bot.image.bot.static
 
+import com.github.kotlintelegrambot.entities.keyboard.KeyboardButton
+import com.papaya.design.platform.bot.image.bot.message.KeyboardInputButton
+
 object RoomUpgrade {
     object Text {
         val START_GENERATION = """
@@ -141,6 +144,12 @@ object PlannedRealisticInterior {
     }
 }
 
+object Payment {
+    object Text {
+        val SELECT_PAYMENT_OPTION = "Выберите количество генераций:"
+    }
+}
+
 object General {
     object Text {
         val WELCOME_MESSAGE =
@@ -175,5 +184,7 @@ object Error {
     object Text {
         const val ERROR_ON_PROCESSING_IMAGE =
             "Произошла ошибка при обработке изображения 😨😢 Опиши проблему, нажав кнопку Поддержки, и мы полечим малыша RoomIO 🤒🚑"
+        val ERROR_HAS_NO_GENERATIONS =
+            "Похоже у вас не осталось генераций, пожалуйста перейдите в \"${KeyboardInputButton.PAYMENT.text}\" для пополнения"
     }
 }

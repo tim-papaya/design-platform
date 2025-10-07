@@ -13,7 +13,7 @@ class UserEntity {
     @Enumerated(value = EnumType.STRING)
     var userState: UserState = UserState.READY_FOR_CMD
 
-    var generationsNumber: Int = 0
+    var generations: Int = 0
 
     var userPrompt: String? = null
 
@@ -32,7 +32,7 @@ fun UserEntity.toModel() =
         this.userState,
         this.userPrompt,
         this.photos.map { it.toModel() },
-        this.generationsNumber
+        this.generations
     )
 
 fun User.toEntity() =
@@ -41,5 +41,5 @@ fun User.toEntity() =
         it.userState = this.userState
         it.userPrompt = this.userPrompt
         it.photos = this.photos.map { it.toEntity() }
-        it.generationsNumber = this.generationsNumber
+        it.generations = this.generationsNumber
     }

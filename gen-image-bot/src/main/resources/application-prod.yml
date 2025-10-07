@@ -1,7 +1,9 @@
 spring:
+  main:
+    allow-circular-references: true
   datasource:
     hikari:
-#      TODO FOR PROD AT LEAST 10
+      #      TODO FOR PROD AT LEAST 10
       maximum-pool-size: 2
   jpa:
     open-in-view: false
@@ -13,7 +15,6 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
       hibernate.naming.physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
-
   flyway:
     enabled: true
     locations: classpath:db/migration

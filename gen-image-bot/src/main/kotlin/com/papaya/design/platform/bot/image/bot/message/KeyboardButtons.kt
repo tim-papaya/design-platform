@@ -18,7 +18,10 @@ enum class KeyboardInputButton(val text: String) {
     KITCHEN("Столовая"),
     BEDROOM("Спальня"),
     GUESTROOM("Гостиная"),
-    SUPPORT("Поддержка 🩹")
+    SUPPORT("Сообщить о проблеме 🩹"),
+    PAYMENT("Поддержать бота 💲"),
+    LOWEST_GENERATION_PACKET("5 генераций"),
+    LOW_GENERATION_PACKET("10 генераций"),
 }
 
 fun createMainKeyboard(): KeyboardReplyMarkup {
@@ -28,6 +31,8 @@ fun createMainKeyboard(): KeyboardReplyMarkup {
             listOf(KeyboardButton(GENERATE_EXTENDED_REALISTIC_INTERIOR.text)),
             listOf(KeyboardButton(ROOM_UPGRADE.text)),
             listOf(KeyboardButton(PLANNED_REALISTIC_INTERIOR.text)),
+            listOf(KeyboardButton(PAYMENT.text)),
+            listOf(KeyboardButton(SUPPORT.text)),
         ),
         resizeKeyboard = true,
         oneTimeKeyboard = true
@@ -84,6 +89,17 @@ fun planedKeyboard(): KeyboardReplyMarkup {
             listOf(KeyboardButton(BEDROOM.text)),
             listOf(KeyboardButton(GUESTROOM.text)),
             listOf(KeyboardButton(CANCEL.text)),
+        ),
+        resizeKeyboard = true,
+        oneTimeKeyboard = true
+    )
+}
+
+fun paymentKeyboard() : KeyboardReplyMarkup {
+    return KeyboardReplyMarkup(
+        keyboard = listOf(
+            listOf(KeyboardButton(LOWEST_GENERATION_PACKET.text)),
+            listOf(KeyboardButton(LOW_GENERATION_PACKET.text)),
         ),
         resizeKeyboard = true,
         oneTimeKeyboard = true

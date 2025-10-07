@@ -17,14 +17,16 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import java.util.Base64.getDecoder
 
 private val log = KotlinLogging.logger { }
 
 private const val TELEGRAM_IMAGE_URL = "https://api.telegram.org/file/bot"
-
+@Lazy
 @Service
 class ImageMessageService(
     private val userService: UserService,
@@ -35,11 +37,11 @@ class ImageMessageService(
     private val maxNumberOfPhotos: Int,
     private val messageService: MessageService,
     private val tracingService: TracingService,
+    private val bot: Bot
 ) {
 
     @OptIn(DelicateCoroutinesApi::class)
     fun handlePhotoMessage(
-        bot: Bot,
         id: TelegramId,
         photos: List<Photo>,
         commandState: StartGenerationOfImage,
@@ -67,7 +69,7 @@ class ImageMessageService(
                                 log.info("Received photo from Telegram chat size - ${imageBytes.size}")
                                 imageBytes
                             }, { error ->
-                                messageService.sendErrorMessage(bot, id, "Error getting file: ${error.errorBody}")
+                                messageService.sendErrorMessage(id, "Error getting file: ${error.errorBody}")
                                 null
                             })
                         }
@@ -91,24 +93,23 @@ class ImageMessageService(
                             imageArray.forEach { tracingService.logResultImage(id.chatId, it, "png") }
                         }
                         log.info("Generated ${imageArray.size} images as output")
-                        sendGeneratedImage(bot, id, imageArray.first())
+                        sendGeneratedImage(id, imageArray.first())
 
                         if (imageArray.size > 1) {
                             log.error("To many output images")
                         }
                     }
                 } catch (e: Exception) {
-                    messageService.sendErrorMessage(bot, id, "Error handling photo message", e)
+                    messageService.sendErrorMessage(id, "Error handling photo message", e)
                 }
             }
 
         } catch (e: Exception) {
-            messageService.sendErrorMessage(bot, id, "Error handling photo message", e)
+            messageService.sendErrorMessage(id, "Error handling photo message", e)
         }
     }
 
     private fun sendGeneratedImage(
-        bot: Bot,
         id: TelegramId,
         imageBytes: ByteArray
     ) {
@@ -123,13 +124,13 @@ class ImageMessageService(
             )
 
             result.fold({
-                messageService.sendGenerationCompletionMessage(bot, id, "Successfully sent generated image to user")
+                messageService.sendGenerationCompletionMessage(id, "Successfully sent generated image to user")
             }, { error ->
-                messageService.sendErrorMessage(bot, id, "Error sending generated image: ${error.errorBody}")
+                messageService.sendErrorMessage(id, "Error sending generated image: ${error.errorBody}")
             })
 
         } catch (e: Exception) {
-            messageService.sendErrorMessage(bot, id, "Error sending generated image", e)
+            messageService.sendErrorMessage(id, "Error sending generated image", e)
         }
     }
 }

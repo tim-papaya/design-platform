@@ -1,6 +1,14 @@
 package com.papaya.design.platform.bot.image.bot.domain
 
-enum class UserState {
+import com.github.kotlintelegrambot.entities.KeyboardReplyMarkup
+import com.github.kotlintelegrambot.entities.ReplyMarkup
+import com.papaya.design.platform.bot.image.bot.message.paymentKeyboard
+import com.papaya.design.platform.bot.image.bot.static.Payment
+
+enum class UserState(
+    val messageText: String = "",
+    val replyMarkup: ReplyMarkup = KeyboardReplyMarkup(),
+) {
     READY_FOR_CMD,
     WAITING_FOR_END_OF_PHOTO_GENERATION,
 
@@ -16,4 +24,6 @@ enum class UserState {
     PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO,
     PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PLAN,
     PLANNED_REALISTIC_INTERIOR_WAITING_FOR_USER_OPTION,
+
+    SELECTING_PAYMENT_OPTION(Payment.Text.SELECT_PAYMENT_OPTION, paymentKeyboard()),
 }
