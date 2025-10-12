@@ -18,8 +18,8 @@ enum class KeyboardInputButton(val text: String) {
     KITCHEN("Столовая"),
     BEDROOM("Спальня"),
     GUESTROOM("Гостиная"),
-    SUPPORT("Сообщить о проблеме 🩹"),
-    PAYMENT("Поддержать бота 💲"),
+    SUPPORT("🩹 Сообщить о проблеме"),
+    PAYMENT("💲 Поддержать бота"),
     LOWEST_GENERATION_PACKET("5 генераций"),
     LOW_GENERATION_PACKET("10 генераций"),
 }
