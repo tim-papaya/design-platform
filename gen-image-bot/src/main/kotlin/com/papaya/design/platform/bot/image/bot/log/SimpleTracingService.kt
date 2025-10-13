@@ -9,6 +9,17 @@ import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
 @Service
+class DummyTracingService : TracingService {
+    override fun logPrompt(chatId: Long, prompt: String) {
+    }
+
+    override fun logImage(chatId: Long, image: ByteArray, extension: String) {
+    }
+
+    override fun logResultImage(chatId: Long, image: ByteArray, extension: String) {
+    }
+}
+
 class SimpleTracingService(
     @Value("\${com.papaya.design.platform.bot.image.trace-log.path:}")
     private val logPath: String

@@ -4,7 +4,10 @@ import java.math.BigInteger
 
 enum class PaymentAmount(val text: String, val price: Int, val amount: Long) {
     LOWEST_GENERATION_PACKET("генерации", 149, 3),
-    LOW_GENERATION_PACKET("генераций", 449, 10);
+    LOW_GENERATION_PACKET("генераций", 449, 10),
+    AVERAGE_GENERATION_PACKET("генераций", 999, 25),
+    ABOVE_AVERAGE_PACKET("генераций",1849, 50),
+    LARGE_PACKET("генераций",3499, 100);
 
     val label: String
         get() = "$amount $text - ${price}р"

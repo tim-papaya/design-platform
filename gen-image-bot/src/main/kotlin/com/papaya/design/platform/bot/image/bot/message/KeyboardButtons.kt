@@ -21,6 +21,7 @@ enum class KeyboardInputButton(val text: String) {
     GUESTROOM("Гостиная"),
     SUPPORT("🩹 Сообщить о проблеме"),
     PAYMENT("💲 Купить"),
+    CHECK_STATUS("Проверить баланс")
 }
 
 fun createMainKeyboard(): KeyboardReplyMarkup {
@@ -32,6 +33,7 @@ fun createMainKeyboard(): KeyboardReplyMarkup {
             listOf(KeyboardButton(PLANNED_REALISTIC_INTERIOR.text)),
             listOf(KeyboardButton(PAYMENT.text)),
             listOf(KeyboardButton(SUPPORT.text)),
+            listOf(KeyboardButton(CHECK_STATUS.text)),
         ),
         resizeKeyboard = true,
         oneTimeKeyboard = true
@@ -99,6 +101,9 @@ fun paymentKeyboard() : KeyboardReplyMarkup {
         keyboard = listOf(
             listOf(KeyboardButton(PaymentAmount.LOWEST_GENERATION_PACKET.label)),
             listOf(KeyboardButton(PaymentAmount.LOW_GENERATION_PACKET.label)),
+            listOf(KeyboardButton(PaymentAmount.AVERAGE_GENERATION_PACKET.label)),
+            listOf(KeyboardButton(PaymentAmount.ABOVE_AVERAGE_PACKET.label)),
+            listOf(KeyboardButton(PaymentAmount.LARGE_PACKET.label)),
             listOf(KeyboardButton(CANCEL.text)),
         ),
         resizeKeyboard = true,

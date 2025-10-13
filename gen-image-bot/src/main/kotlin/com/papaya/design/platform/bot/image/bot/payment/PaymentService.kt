@@ -2,6 +2,7 @@ package com.papaya.design.platform.bot.image.bot.payment
 
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
+import com.github.kotlintelegrambot.entities.payments.InvoiceUserDetail
 import com.github.kotlintelegrambot.entities.payments.LabeledPrice
 import com.github.kotlintelegrambot.entities.payments.PaymentInvoiceInfo
 import com.papaya.design.platform.bot.image.bot.message.TelegramId
@@ -35,13 +36,17 @@ class PaymentService(
                 description = paymentAmount.amountAsText,
                 payload = "${id.userId}$PAYLOAD_SEPARATOR${paymentAmount.amount}",
                 providerToken = shopToken,
-                startParameter = "test",
+                startParameter = id.userId.toString(),
                 currency = "RUB",
                 prices = listOf(
                     LabeledPrice(
                         label = "К оплате",
                         amount = paymentAmount.priceWithCents
                     )
+                ),
+                invoiceUserDetail = InvoiceUserDetail(
+                    needEmail = true,
+                    sendEmailToProvider = true
                 )
             )
         ).onError { e ->

@@ -112,7 +112,7 @@ class TelegramBotService(
                         userService.saveUser(id) { u ->
                             u.photos = listOf()
                         }
-                        messageService.sendGenerationCompletionMessage(id, "Return to main menu")
+                        messageService.sendMessageAndReturnToMainMenu(id, General.Text.NEXT_STEP)
                         return@message
                     }
 
@@ -169,6 +169,14 @@ class TelegramBotService(
                                 KeyboardInputButton.SUPPORT.text -> {
                                     messageService.sendStateMessage(id, CONFIRMING_SUPPORT_MESSAGE)
                                 }
+
+                                KeyboardInputButton.CHECK_STATUS.text -> {
+                                    messageService.sendMessageAndReturnToMainMenu(
+                                        id,
+                                        "${General.Text.GENERATIONS_AMOUNT} ${user.generationsNumber}"
+                                    )
+                                }
+
                             }
                         }
 
@@ -351,6 +359,18 @@ class TelegramBotService(
 
                                 PaymentAmount.LOW_GENERATION_PACKET.label -> {
                                     paymentService.sendInvoice(id, PaymentAmount.LOW_GENERATION_PACKET)
+                                }
+
+                                PaymentAmount.AVERAGE_GENERATION_PACKET.label -> {
+                                    paymentService.sendInvoice(id, PaymentAmount.AVERAGE_GENERATION_PACKET)
+                                }
+
+                                PaymentAmount.ABOVE_AVERAGE_PACKET.label -> {
+                                    paymentService.sendInvoice(id, PaymentAmount.ABOVE_AVERAGE_PACKET)
+                                }
+
+                                PaymentAmount.LARGE_PACKET.label -> {
+                                    paymentService.sendInvoice(id, PaymentAmount.LARGE_PACKET)
                                 }
 
                                 else -> {
