@@ -6,8 +6,11 @@ import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
+import com.github.kotlintelegrambot.dispatcher.preCheckoutQuery
+import com.github.kotlintelegrambot.dispatcher.text
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.Message
+import com.github.kotlintelegrambot.extensions.filters.Filter
 import com.papaya.design.platform.bot.image.bot.domain.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState
@@ -18,12 +21,15 @@ import com.papaya.design.platform.bot.image.bot.message.StartGenerationOfImage.C
 import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.START_CMD
 import com.papaya.design.platform.bot.image.bot.message.WaitingPhotoState.Companion.PLANED_BEFORE_OPTIONS
 import com.papaya.design.platform.bot.image.bot.message.WaitingPhotoState.Companion.PLANED_BEFORE_PLAN
+import com.papaya.design.platform.bot.image.bot.payment.PaymentAmount
 import com.papaya.design.platform.bot.image.bot.payment.PaymentService
 import com.papaya.design.platform.bot.image.bot.static.Error
 import com.papaya.design.platform.bot.image.bot.static.ExtendedRealisticInterior
 import com.papaya.design.platform.bot.image.bot.static.General
+import com.papaya.design.platform.bot.image.bot.static.Payment
 import com.papaya.design.platform.bot.image.bot.static.RealisticInterior
 import com.papaya.design.platform.bot.image.bot.static.RoomUpgrade
+import com.papaya.design.platform.bot.image.bot.static.Support
 import com.papaya.design.platform.bot.image.bot.user.UserService
 import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
@@ -31,7 +37,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Lazy
 import org.springframework.context.annotation.Profile
 
 private val log = KotlinLogging.logger { }
@@ -46,29 +51,57 @@ class TelegramBotService(
     private val supportId: Long,
 ) : BotService {
     @Autowired
-     lateinit var messageService: MessageService
+    lateinit var messageService: MessageService
 
     @Autowired
-     lateinit var paymentService: PaymentService
+    lateinit var paymentService: PaymentService
 
     @Autowired
-     lateinit var imageMessageService: ImageMessageService
+    lateinit var imageMessageService: ImageMessageService
 
     @Bean
     fun bot(): Bot = bot {
         token = apiKey
         dispatch {
             command(START_CMD.text) {
-                messageService.sendFirstTimeWelcome(message.userId())
+                messageService.sendFirstTimeWelcome(message.telegramId())
             }
             command(TelegramCommand.SUPPORT.text) {
                 sendMessageToSupport(bot, message.telegramId(), message)
             }
+            command(TelegramCommand.SEND_ALL.text) {
+                val id = message.telegramId()
+                val text = messageWithoutCommand(message.text)
+                if (id.userId != supportId) return@command
+
+                if (text == null) {
+                    messageService.sendWarningMessage(id, "Where is no text to send")
+                    return@command
+                }
+
+                userService.getAllUserIds().forEach {
+                    bot.sendMessage(ChatId.fromId(it), text)
+                }
+            }
+            preCheckoutQuery {
+                log.info { "Confirming payment ${preCheckoutQuery.id} ${preCheckoutQuery.totalAmount}" }
+                bot.answerPreCheckoutQuery(preCheckoutQuery.id, true)
+                    .onSuccess { log.info { "Confirmed payment for  ${preCheckoutQuery.id}" } }
+                    .onError { e -> log.info { "Error on confirming message $e" } }
+            }
+            message(Filter.Custom { successfulPayment != null }) {
+                val paymentInfo = paymentService.extractPaymentInfo(message.successfulPayment!!.invoicePayload)
+                userService.saveUser(paymentInfo.id) { u ->
+                    u.generations += paymentInfo.Amount
+                }
+                log.info { "User ${paymentInfo.id} bought ${paymentInfo.Amount} generations" }
+                messageService.sendMessageAndReturnToMainMenu(message.telegramId(), Payment.Text.SUCCSESFUL_PAYMENT)
+            }
             message {
-                val id = TelegramId(message.chat.id, message.userId())
+                val id = message.telegramId()
 
                 val user = userService.getUserOrNull(id.userId)
-                    ?: messageService.sendFirstTimeWelcome(id.userId)
+                    ?: messageService.sendFirstTimeWelcome(id)
 
                 try {
                     val messageText = message.text
@@ -76,7 +109,7 @@ class TelegramBotService(
 
                     if (messageText == KeyboardInputButton.CANCEL.text) {
                         // TODO VALIDATE PHOTOS
-                        userService.saveUser(id.userId) { u ->
+                        userService.saveUser(id) { u ->
                             u.photos = listOf()
                         }
                         messageService.sendGenerationCompletionMessage(id, "Return to main menu")
@@ -87,7 +120,7 @@ class TelegramBotService(
                         READY_FOR_CMD -> {
                             when (messageText) {
                                 KeyboardInputButton.START.text ->
-                                    messageService.sendFirstTimeWelcome(user.userId)
+                                    messageService.sendFirstTimeWelcome(id)
 
                                 KeyboardInputButton.GENERATE_REALISTIC_INTERIOR.text -> {
                                     if (!paymentService.hasAvailableGenerations(id)) {
@@ -134,7 +167,7 @@ class TelegramBotService(
                                 }
 
                                 KeyboardInputButton.SUPPORT.text -> {
-                                    sendMessageToSupport(bot, message.telegramId(), message)
+                                    messageService.sendStateMessage(id, CONFIRMING_SUPPORT_MESSAGE)
                                 }
                             }
                         }
@@ -155,7 +188,7 @@ class TelegramBotService(
 
                         ROOM_UPGRADE_WAITING_FOR_PHOTO -> {
                             if (photos != null) {
-                                userService.saveUser(id.userId) { u ->
+                                userService.saveUser(id) { u ->
                                     u.photos = photos.map { it.toEntity() }
                                     u.userState = ROOM_UPGRADE_WAITING_FOR_USER_OPTION
                                 }
@@ -218,7 +251,7 @@ class TelegramBotService(
 
                         EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
                             if (photos != null) {
-                                userService.saveUser(id.userId) { u ->
+                                userService.saveUser(id) { u ->
                                     u.photos = photos.map { it.toEntity() }
                                     u.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_USER_PROMPT
                                 }
@@ -241,7 +274,7 @@ class TelegramBotService(
 
                         EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_USER_PROMPT -> {
                             if (messageText != null) {
-                                userService.saveUser(id.userId) { u ->
+                                userService.saveUser(id) { u ->
                                     u.userPrompt = messageText
                                     u.userState = EXTENDED_REALISTIC_INTERIOR_WAITING_ADDITIONAL_PHOTO
                                 }
@@ -267,7 +300,7 @@ class TelegramBotService(
                                 )
                             } else if (photos != null) {
                                 // TODO Add validation of photos merge
-                                userService.saveUser(id.userId) { u ->
+                                userService.saveUser(id) { u ->
                                     u.photos = (user.photos + photos).map { it.toEntity() }
                                 }
 
@@ -288,7 +321,7 @@ class TelegramBotService(
 
                         PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
                             // TODO VALIDATE PHOTOS
-                            userService.saveUser(id.userId) { u ->
+                            userService.saveUser(id) { u ->
                                 u.photos = listOf()
                             }
 
@@ -312,16 +345,28 @@ class TelegramBotService(
 
                         UserState.SELECTING_PAYMENT_OPTION -> {
                             when (messageText) {
-                                KeyboardInputButton.LOWEST_GENERATION_PACKET.text -> {
-                                    messageService.sendWarningMessage(id, "В разработке")
-                                    paymentService.sendInvoice(id)
+                                PaymentAmount.LOWEST_GENERATION_PACKET.label -> {
+                                    paymentService.sendInvoice(id, PaymentAmount.LOWEST_GENERATION_PACKET)
                                 }
 
-                                KeyboardInputButton.LOW_GENERATION_PACKET.text -> {
-                                    messageService.sendWarningMessage(id, "В разработке")
+                                PaymentAmount.LOW_GENERATION_PACKET.label -> {
+                                    paymentService.sendInvoice(id, PaymentAmount.LOW_GENERATION_PACKET)
                                 }
 
+                                else -> {
+                                    messageService.sendMessage(id, Payment.Text.SELECT_PAYMENT_OPTION)
+                                    return@message
+                                }
                             }
+                            messageService.sendMessageAndReturnToMainMenu(id, Payment.Text.PAYMENT_PREPARED)
+                        }
+
+                        UserState.CONFIRMING_SUPPORT_MESSAGE -> {
+                            if (message.text.isNullOrBlank())
+                                messageService.sendMessage(id, Support.Error.ERROR_EMPTY_MESSAGE)
+                            sendMessageToSupport(bot, message.telegramId(), message)
+                            messageService.sendMessageAndReturnToMainMenu(id, Support.Text.CONFIRMING_SUPPORT_MESSAGE)
+
                         }
                     }
                 } catch (e: Exception) {
@@ -356,3 +401,6 @@ class TelegramBotService(
         }?.let { Photo(it.fileId, it.fileUniqueId) }
         ?.let { listOf(it) }
 }
+
+private fun messageWithoutCommand(text: String?): String? =
+    text?.trim()?.split(Regex("\\s+"), limit = 2)?.drop(1)?.firstOrNull()

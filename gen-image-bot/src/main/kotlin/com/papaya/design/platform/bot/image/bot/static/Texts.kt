@@ -148,6 +148,8 @@ object PlannedRealisticInterior {
 object Payment {
     object Text {
         val SELECT_PAYMENT_OPTION = "Выберите количество генераций:"
+        val SUCCSESFUL_PAYMENT = "Спасибо за покупку!"
+        val PAYMENT_PREPARED = "Счет на оплату готов⬆"
     }
 }
 
@@ -180,6 +182,15 @@ object General {
     }
 }
 
+object Support {
+    object Text {
+        val CONFIRM_SUPPORT_MESSAGE = "Пожалуйста, опишите проблему или предложение по улучшению:"
+        val CONFIRMING_SUPPORT_MESSAGE = "Спасибо за обратную связь!"
+    }
+    object Error {
+        val ERROR_EMPTY_MESSAGE = "Сообщение пустое, пожалуйста проблему или предложение по улучшению"
+    }
+}
 object Error {
     object Text {
         const val ERROR_ON_PROCESSING_IMAGE =

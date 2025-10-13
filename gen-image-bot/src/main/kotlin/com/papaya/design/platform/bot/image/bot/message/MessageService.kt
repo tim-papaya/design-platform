@@ -25,15 +25,15 @@ class MessageService(
     private val userService: UserService,
     private val imageLoader: ExamplesLocalImageLoader,
     private val bot: Bot
-    ) {
+) {
 
     fun sendFirstTimeWelcome(
-        userId: Long,
+        userId: TelegramId,
     ): User {
         val user = userService.saveUser(userId)
 
         bot.sendMessage(
-            chatId = ChatId.Companion.fromId(userId),
+            chatId = ChatId.Companion.fromId(userId.userId),
             text = General.Text.WELCOME_MESSAGE,
             replyMarkup = createMainKeyboard()
         )
@@ -44,7 +44,7 @@ class MessageService(
         id: TelegramId,
         commandState: ImageGenerationStrategy,
     ) {
-        userService.saveUser(id.userId) { u ->
+        userService.saveUser(id) { u ->
             u.userState = commandState.newState
         }
 
@@ -61,7 +61,7 @@ class MessageService(
             log.info("User $id is now waiting for image")
         }, { e ->
             log.error(e.exception) { "Error in $commandState, error: ${e.errorBody}" }
-            userService.saveUser(id.userId) { u ->
+            userService.saveUser(id) { u ->
                 u.userState = commandState.stateToReturn
             }
         })
@@ -71,8 +71,9 @@ class MessageService(
         id: TelegramId,
         successMessage: String
     ) {
-        userService.saveUser(id.userId) { u ->
+        userService.saveUser(id) { u ->
             u.userState = UserState.READY_FOR_CMD
+            u.generations -= 1
         }
 
         bot.sendMessage(
@@ -97,8 +98,8 @@ class MessageService(
         sendMessageAndReturnToMainMenu(id, warningMessage)
     }
 
-    private fun sendMessageAndReturnToMainMenu(id: TelegramId, message: String) {
-        userService.saveUser(id.userId) { u ->
+    fun sendMessageAndReturnToMainMenu(id: TelegramId, message: String) {
+        userService.saveUser(id) { u ->
             u.userState = UserState.READY_FOR_CMD
         }
 
@@ -116,7 +117,7 @@ class MessageService(
     ) {
         if (photos != null) {
             // TODO Add validation
-            userService.saveUser(id.userId) { u ->
+            userService.saveUser(id) { u ->
                 u.photos += photos.map { it.toEntity() }
                 u.userState = waitingPhotoState.newState
             }
@@ -138,7 +139,7 @@ class MessageService(
     }
 
     fun sendStateMessage(id: TelegramId, userState: UserState) {
-        userService.saveUser(id.userId) { u ->
+        userService.saveUser(id) { u ->
             u.userState = userState
         }
 
@@ -146,6 +147,13 @@ class MessageService(
             chatId = ChatId.fromId(id.chatId),
             text = userState.messageText,
             replyMarkup = userState.replyMarkup
+        )
+    }
+
+    fun sendMessage(id: TelegramId, message: String) {
+        bot.sendMessage(
+            chatId = ChatId.fromId(id.chatId),
+            text = message,
         )
     }
 }

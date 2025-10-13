@@ -10,6 +10,8 @@ class UserEntity {
 
     var userId: Long = 0
 
+    var userName: String? = null
+
     @Enumerated(value = EnumType.STRING)
     var userState: UserState = UserState.READY_FOR_CMD
 
@@ -30,6 +32,7 @@ fun UserEntity.toModel() =
     User(
         this.userId,
         this.userState,
+        this.userName,
         this.userPrompt,
         this.photos.map { it.toModel() },
         this.generations
@@ -39,6 +42,7 @@ fun User.toEntity() =
     UserEntity().also {
         it.userId = this.userId
         it.userState = this.userState
+        it.userName = this.userName
         it.userPrompt = this.userPrompt
         it.photos = this.photos.map { it.toEntity() }
         it.generations = this.generationsNumber

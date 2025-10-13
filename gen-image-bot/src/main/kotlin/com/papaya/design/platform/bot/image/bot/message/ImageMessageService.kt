@@ -48,7 +48,7 @@ class ImageMessageService(
         userPrompt: String? = null,
     ) {
         try {
-            userService.saveUser(id.userId) { u ->
+            userService.saveUser(id) { u ->
                 u.userState = WAITING_FOR_END_OF_PHOTO_GENERATION
             }
 

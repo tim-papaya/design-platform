@@ -2,8 +2,10 @@ package com.papaya.design.platform.bot.image.bot.domain
 
 import com.github.kotlintelegrambot.entities.KeyboardReplyMarkup
 import com.github.kotlintelegrambot.entities.ReplyMarkup
+import com.papaya.design.platform.bot.image.bot.message.onlyBackKeyboard
 import com.papaya.design.platform.bot.image.bot.message.paymentKeyboard
 import com.papaya.design.platform.bot.image.bot.static.Payment
+import com.papaya.design.platform.bot.image.bot.static.Support
 
 enum class UserState(
     val messageText: String = "",
@@ -26,4 +28,6 @@ enum class UserState(
     PLANNED_REALISTIC_INTERIOR_WAITING_FOR_USER_OPTION,
 
     SELECTING_PAYMENT_OPTION(Payment.Text.SELECT_PAYMENT_OPTION, paymentKeyboard()),
+
+    CONFIRMING_SUPPORT_MESSAGE(Support.Text.CONFIRM_SUPPORT_MESSAGE, onlyBackKeyboard())
 }

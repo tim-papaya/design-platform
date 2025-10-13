@@ -16,4 +16,4 @@ fun Message.userId(): Long {
 }
 
 fun Message.telegramId() : TelegramId =
-    TelegramId(this.chat.id, this.userId())
+    TelegramId(this.chat.id, this.userId(), this.from?.username)

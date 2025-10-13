@@ -4,6 +4,7 @@ import com.github.kotlintelegrambot.entities.KeyboardReplyMarkup
 import com.github.kotlintelegrambot.entities.ReplyKeyboardRemove
 import com.github.kotlintelegrambot.entities.keyboard.KeyboardButton
 import com.papaya.design.platform.bot.image.bot.message.KeyboardInputButton.*
+import com.papaya.design.platform.bot.image.bot.payment.PaymentAmount
 
 enum class KeyboardInputButton(val text: String) {
     GENERATE_REALISTIC_INTERIOR("🖼️ 3D-визуализация по коллажу"),
@@ -19,9 +20,7 @@ enum class KeyboardInputButton(val text: String) {
     BEDROOM("Спальня"),
     GUESTROOM("Гостиная"),
     SUPPORT("🩹 Сообщить о проблеме"),
-    PAYMENT("💲 Поддержать бота"),
-    LOWEST_GENERATION_PACKET("5 генераций"),
-    LOW_GENERATION_PACKET("10 генераций"),
+    PAYMENT("💲 Купить"),
 }
 
 fun createMainKeyboard(): KeyboardReplyMarkup {
@@ -98,8 +97,9 @@ fun planedKeyboard(): KeyboardReplyMarkup {
 fun paymentKeyboard() : KeyboardReplyMarkup {
     return KeyboardReplyMarkup(
         keyboard = listOf(
-            listOf(KeyboardButton(LOWEST_GENERATION_PACKET.text)),
-            listOf(KeyboardButton(LOW_GENERATION_PACKET.text)),
+            listOf(KeyboardButton(PaymentAmount.LOWEST_GENERATION_PACKET.label)),
+            listOf(KeyboardButton(PaymentAmount.LOW_GENERATION_PACKET.label)),
+            listOf(KeyboardButton(CANCEL.text)),
         ),
         resizeKeyboard = true,
         oneTimeKeyboard = true

@@ -5,4 +5,5 @@ enum class TelegramCommand(
 ){
     START_CMD("start"),
     SUPPORT("support"),
+    SEND_ALL("send_all"),
 }
