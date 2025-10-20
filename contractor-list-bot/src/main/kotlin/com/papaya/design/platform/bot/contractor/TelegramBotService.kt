@@ -26,6 +26,7 @@ import com.papaya.design.platform.bot.tg.core.command.message.TelegramId
 import com.papaya.design.platform.bot.tg.core.command.message.telegramId
 import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
+import org.hibernate.Length
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -82,7 +83,10 @@ class TelegramBotService(
                     else -> {
                         userService.saveUser(newUserId)
                         messageService.sendMessage(id, General.Text.ACCESS_GIVEN, { createMainMenuKeyboard() })
-                        messageService.sendMessage(TelegramId(newUserId, newUserId), General.Text.ACCESS_GIVEN, { createMainMenuKeyboard() })
+                        messageService.sendMessage(
+                            TelegramId(newUserId, newUserId),
+                            General.Text.ACCESS_GIVEN,
+                            { createMainMenuKeyboard() })
                     }
                 }
             }
@@ -179,6 +183,7 @@ class TelegramBotService(
 
                 checkField(
                     messageText, id, ContractorUserState.ADD_NAME,
+                    isLengthLimited = true,
                     { _: ContractorEntity, _: String -> },
                     nextReplyMarkup = { createListMarkup(contractorService.getCategories()) },
                     invokeBeforeChangeMapper = { s: String ->
@@ -193,6 +198,7 @@ class TelegramBotService(
             ContractorUserState.ADD_CATEGORY ->
                 checkField(
                     messageText, id, ContractorUserState.ADD_CATEGORY,
+                    isLengthLimited = true,
                     { c: ContractorEntity, s: String -> c.category = s },
                 ) {
                     createListMarkup(contractorService.getCategories())
@@ -201,12 +207,14 @@ class TelegramBotService(
             ContractorUserState.ADD_PHONE ->
                 checkField(
                     messageText, id, ContractorUserState.ADD_PHONE,
+                    isLengthLimited = true,
                     { c: ContractorEntity, s: String -> c.phone = s })
 
 
             ContractorUserState.ADD_LINK -> {
                 checkField(
                     messageText, id, ContractorUserState.ADD_LINK,
+                    isLengthLimited = false,
                     { c: ContractorEntity, s: String -> c.link = s })
                 checkThatPhoneOrLinkIsFilled(id)
             }
@@ -214,6 +222,7 @@ class TelegramBotService(
             ContractorUserState.ADD_COMMENT -> {
                 checkField(
                     messageText, id, ContractorUserState.ADD_COMMENT,
+                    isLengthLimited = false,
                     { c: ContractorEntity, s: String -> c.comment = s },
                     nextReplyMarkup = { InlineKeyboardMarkup.create() },
                     sendAdditionalMessageOnNext = {
@@ -391,17 +400,17 @@ class TelegramBotService(
             }
 
             ContractorUserState.EDIT_NAME ->
-                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_NAME) { c, s ->
+                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_NAME, isLengthLimited = true) { c, s ->
                     c.name = s
                 }
 
             ContractorUserState.EDIT_CATEGORY ->
-                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_CATEGORY) { c, s ->
+                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_CATEGORY, isLengthLimited = true) { c, s ->
                     c.category = s
                 }
 
             ContractorUserState.EDIT_PHONE ->
-                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_PHONE) { c, s ->
+                checkFieldEdit(messageText, id, user, ContractorUserState.EDIT_PHONE, isLengthLimited = true) { c, s ->
                     c.phone = s
                 }
 
@@ -433,6 +442,7 @@ class TelegramBotService(
         id: TelegramId,
         user: User,
         currentState: ContractorUserState,
+        isLengthLimited: Boolean = false,
         changeMapper: (ContractorEntity, String) -> Unit,
     ) {
         val fieldValue = messageText.trim()
@@ -455,7 +465,7 @@ class TelegramBotService(
                     id, General.Error.ERROR_EMPTY_FIELD, { errorReplyMarkup }
                 )
 
-            fieldValue.length >= 32 ->
+            isLengthLimited && fieldValue.length >= 32 ->
                 messageService.sendMessage(
                     id, General.Error.ERROR_FIELD_SIZE_TOO_LARGE, { errorReplyMarkup }
                 )
@@ -475,6 +485,7 @@ class TelegramBotService(
         messageText: String?,
         id: TelegramId,
         changeFieldState: ContractorUserState,
+        isLengthLimited : Boolean = false,
         changeMapper: (ContractorEntity, String) -> Unit,
         errorReplyMarkup: () -> InlineKeyboardMarkup = {
             createNextStepAndBackMenu(
@@ -506,7 +517,7 @@ class TelegramBotService(
             !changeFieldState.isOptional && (fieldValue == null || fieldValue.containsContractorUserState()) ->
                 messageService.sendMessage(id, General.Error.ERROR_EMPTY_FIELD, errorReplyMarkup)
 
-            fieldValue != null && fieldValue.length >= 32 ->
+            isLengthLimited && fieldValue != null && fieldValue.length >= 32 ->
                 messageService.sendMessage(id, General.Error.ERROR_FIELD_SIZE_TOO_LARGE, errorReplyMarkup)
 
             else -> {
