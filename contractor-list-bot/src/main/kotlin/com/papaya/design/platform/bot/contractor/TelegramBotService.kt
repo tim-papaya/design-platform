@@ -233,7 +233,8 @@ class TelegramBotService(
                             {
                                 createNextStepAndBackMenu(
                                     ContractorUserState.ADD_COMMENT,
-                                    ContractorUserState.CONFIRM_FINISH_ADDING_CONTRACTOR
+                                    ContractorUserState.CONFIRM_FINISH_ADDING_CONTRACTOR,
+                                    GeneralTelegramCommand.ADD.btnText
                                 )
                             }
                         )

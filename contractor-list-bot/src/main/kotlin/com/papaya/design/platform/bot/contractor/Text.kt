@@ -16,7 +16,7 @@ object General {
         const val ADD_LINK =
             "Введите ссылку:\n\nПример: @Link\nПример: https://google.com\n\nEсли ссылки нет, введите \"Нет\""
         const val ADD_COMMENT = "Введите комментарий/отзыв"
-        const val FINISH_ADDING_CONTRACTOR = "Закончили с подготовкой, проверьте и нажмите \"Далее\""
+        const val FINISH_ADDING_CONTRACTOR = "Закончили с подготовкой, проверьте и нажмите \"Добавить\""
         const val CONFIRM_FINISH_ADDING_CONTRACTOR = "Подрядчик добавлен"
         const val EDIT = "Выберите поле для редактирования"
         const val EDIT_BTN = "Редактировать"

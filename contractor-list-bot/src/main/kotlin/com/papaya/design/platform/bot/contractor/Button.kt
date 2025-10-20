@@ -23,12 +23,13 @@ fun createMainMenuKeyboard() =
 
 fun createNextStepAndBackMenu(
     previousState: ContractorUserState,
-    nextState: ContractorUserState? = null
+    nextState: ContractorUserState? = null,
+    nextBtnText: String = GeneralTelegramCommand.NEXT.btnText
 ): InlineKeyboardMarkup {
     return if (nextState != null) {
         InlineKeyboardMarkup.create(
             listOf(
-                listOf(CallbackData(GeneralTelegramCommand.NEXT.btnText, nextState.name)),
+                listOf(CallbackData(nextBtnText, nextState.name)),
                 listOf(CallbackData(GeneralTelegramCommand.BACK.btnText, previousState.name)),
                 listOf(
                     CallbackData(
@@ -69,7 +70,11 @@ fun createListMarkup(
                 )
     )
 
-fun createContractorEditMarkup(contractorService: ContractorService, category: String, contractorName: String): InlineKeyboardMarkup =
+fun createContractorEditMarkup(
+    contractorService: ContractorService,
+    category: String,
+    contractorName: String
+): InlineKeyboardMarkup =
     createListMarkup(
         contractorService.getContractorNamesByCategory(category).filter { it != contractorName },
         before = ContractorUserState.EDIT,

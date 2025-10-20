@@ -8,6 +8,7 @@ enum class GeneralTelegramCommand(
     SUPPORT("support", "Поддержка"),
     BACK("back", "Назад"),
     NEXT("next", "Далее"),
+    ADD("add", "Добавить"),
     MAIN_MENU("main_menu", "В главное меню"),
     GET_ACCESS("get_access", "Получить доступ"),
     ADD_ACCESS("add_access", "Предоставить доступ"),
