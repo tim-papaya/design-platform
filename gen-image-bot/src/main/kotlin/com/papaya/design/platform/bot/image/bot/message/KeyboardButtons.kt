@@ -20,7 +20,7 @@ enum class KeyboardInputButton(val text: String) {
     BEDROOM("Спальня"),
     GUESTROOM("Гостиная"),
     SUPPORT("🩹 Сообщить о проблеме"),
-    PAYMENT("💲 Купить"),
+    PAYMENT("💲 Купить генерации"),
     CHECK_STATUS("Проверить баланс")
 }
 

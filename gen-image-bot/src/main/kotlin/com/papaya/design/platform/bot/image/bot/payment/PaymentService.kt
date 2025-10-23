@@ -38,6 +38,25 @@ class PaymentService(
                 providerToken = shopToken,
                 startParameter = id.userId.toString(),
                 currency = "RUB",
+                providerData = """
+                    {
+                            "receipt" : {
+                                "items" : [
+                                    {
+                                        "description" : "${paymentAmount.amountAsText}",
+                                        "quantity" : 1,
+                                        "amount" : {
+                                            "value" : ${paymentAmount.price.toDouble()},
+                                            "currency" : "RUB"
+                                        },
+                                        "vat_code" : 1,
+                                        "payment_mode" : "full_payment",
+                                        "payment_subject" : "commodity"
+                                    }
+                                ]
+                            }
+                    }
+                """.trimIndent(),
                 prices = listOf(
                     LabeledPrice(
                         label = "К оплате",
