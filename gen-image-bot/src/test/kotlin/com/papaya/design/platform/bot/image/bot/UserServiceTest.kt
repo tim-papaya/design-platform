@@ -1,6 +1,6 @@
 package com.papaya.design.platform.bot.image.bot
 
-import com.papaya.design.platform.bot.image.bot.domain.Photo
+import com.papaya.design.platform.ai.photo.Photo
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.toEntity
 import com.papaya.design.platform.bot.image.bot.photo.PhotoRepository

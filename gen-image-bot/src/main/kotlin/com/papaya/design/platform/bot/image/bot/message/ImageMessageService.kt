@@ -6,8 +6,8 @@ import com.github.kotlintelegrambot.entities.TelegramFile
 import com.github.kotlintelegrambot.network.bimap
 import com.github.kotlintelegrambot.network.fold
 import com.papaya.design.platform.ai.AiImageService
-import com.papaya.design.platform.bot.image.bot.domain.Photo
-import com.papaya.design.platform.bot.image.bot.domain.UserState
+import com.papaya.design.platform.ai.photo.Photo
+import com.papaya.design.platform.ai.photo.PhotoWithContent
 import com.papaya.design.platform.bot.image.bot.domain.UserState.WAITING_FOR_END_OF_PHOTO_GENERATION
 import com.papaya.design.platform.bot.image.bot.image.downloadImageAsBytes
 import com.papaya.design.platform.bot.image.bot.log.TracingService
@@ -17,7 +17,6 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
@@ -67,7 +66,7 @@ class ImageMessageService(
                                 val fileUrl = "$TELEGRAM_IMAGE_URL$apiKey/${file?.result?.filePath}"
                                 val imageBytes = downloadImageAsBytes(fileUrl)
                                 log.info("Received photo from Telegram chat size - ${imageBytes.size}")
-                                imageBytes
+                                PhotoWithContent(currentPhoto, imageBytes)
                             }, { error ->
                                 messageService.sendErrorMessage(id, "Error getting file: ${error.errorBody}")
                                 null
@@ -77,7 +76,7 @@ class ImageMessageService(
                     GlobalScope.launch {
                         if (!(userPrompt?.trim().isNullOrEmpty()))
                             tracingService.logPrompt(id.chatId, userPrompt!!)
-                        resultPhotos.forEach { tracingService.logImage(id.chatId, it, "jpeg") }
+                        resultPhotos.forEach { tracingService.logImage(id.chatId, it.bytes, "jpeg") }
                     }
 
                     aiImageService.generateImage(

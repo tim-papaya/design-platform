@@ -5,7 +5,7 @@ import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.TelegramFile
 import com.github.kotlintelegrambot.network.ResponseError
 import com.github.kotlintelegrambot.network.fold
-import com.papaya.design.platform.bot.image.bot.domain.Photo
+import com.papaya.design.platform.ai.photo.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.toEntity

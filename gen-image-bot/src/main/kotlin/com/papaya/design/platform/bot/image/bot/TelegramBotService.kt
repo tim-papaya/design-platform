@@ -7,11 +7,10 @@ import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.handlers.MessageHandlerEnvironment
 import com.github.kotlintelegrambot.dispatcher.message
 import com.github.kotlintelegrambot.dispatcher.preCheckoutQuery
-import com.github.kotlintelegrambot.dispatcher.text
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.Message
 import com.github.kotlintelegrambot.extensions.filters.Filter
-import com.papaya.design.platform.bot.image.bot.domain.Photo
+import com.papaya.design.platform.ai.photo.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
@@ -105,7 +104,7 @@ class TelegramBotService(
 
                 try {
                     val messageText = message.text
-                    val photos = extractPhotoFromMessage(user)
+                    val photos = extractPhotoFromMessage()
 
                     if (messageText == KeyboardInputButton.CANCEL.text) {
                         // TODO VALIDATE PHOTOS
@@ -409,17 +408,18 @@ class TelegramBotService(
         log.info { "Telegram bot started" }
     }
 
-    private fun MessageHandlerEnvironment.extractPhotoFromMessage(user: User): List<Photo>? = message.photo
-        ?.sortedBy { it.fileSize }
-        ?.map {
-            log.info { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
-            it
+    private fun MessageHandlerEnvironment.extractPhotoFromMessage(): List<Photo>? =
+        message.photo
+            ?.sortedBy { it.fileSize }
+            ?.map {
+                log.info { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
+                it
 //        }?.let { photoSizeList ->
 //            photoSizeList.first { it.height >= 300 && it.width >= 300 }
-        }?.let {
-            it.last()
-        }?.let { Photo(it.fileId, it.fileUniqueId) }
-        ?.let { listOf(it) }
+            }?.let {
+                it.last()
+            }?.let { Photo(it.fileId, it.fileUniqueId, it.width, it.height) }
+            ?.let { listOf(it) }
 }
 
 private fun messageWithoutCommand(text: String?): String? =

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.papaya.design.platform.ai.AiImageService
 import com.papaya.design.platform.ai.HttpClientService
 import com.papaya.design.platform.ai.extractImagesInB64
+import com.papaya.design.platform.ai.photo.PhotoWithContent
 import mu.KotlinLogging
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -28,9 +29,10 @@ class OpenAiImageService(
     override suspend fun generateImage(
         userPrompt: String?,
         systemPrompt: String,
-        images: List<ByteArray>,
+        images: List<PhotoWithContent>,
         callback: (List<String>) -> Unit,
     ) {
+        val inputMainImage = images.first()
 
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -38,19 +40,20 @@ class OpenAiImageService(
             .addFormDataPart("prompt", "$systemPrompt\n$userPrompt")
             .addFormDataPart("output_format", "png")
             .addFormDataPart("quality", "high")
+            .addFormDataPart("size", inputMainImage.currentPhoto.imageOrientation.toOpenAiSize())
             .addFormDataPart("input_fidelity", "high").apply {
                 if (images.size == 1) {
                     addFormDataPart(
                         name = "image",
                         filename = "image_${LocalDateTime.now()}.jpeg",
-                        body = images.first().toRequestBody("image/jpeg".toMediaType())
+                        body = inputMainImage.bytes.toRequestBody("image/jpeg".toMediaType())
                     )
                 } else {
                     images.forEach { imageByteArray ->
                         addFormDataPart(
                             name = "image[]",
                             filename = "image_${LocalDateTime.now()}.jpeg",
-                            body = imageByteArray.toRequestBody("image/jpeg".toMediaType())
+                            body = imageByteArray.bytes.toRequestBody("image/jpeg".toMediaType())
                         )
                     }
                 }

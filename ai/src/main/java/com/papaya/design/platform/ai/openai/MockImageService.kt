@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.papaya.design.platform.ai.AiImageService
 import com.papaya.design.platform.ai.HttpClientService
 import com.papaya.design.platform.ai.extractImageInB64
+import com.papaya.design.platform.ai.photo.PhotoWithContent
 import mu.KotlinLogging
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -21,7 +22,7 @@ class MockImageService(
     override suspend fun generateImage(
         userPrompt: String?,
         systemPrompt: String,
-        images: List<ByteArray>,
+        images: List<PhotoWithContent>,
         callback: (List<String>) -> Unit
     ) {
         val responseFromAi = Thread.currentThread().contextClassLoader.getResource("mock_result_b64.json").readText()
