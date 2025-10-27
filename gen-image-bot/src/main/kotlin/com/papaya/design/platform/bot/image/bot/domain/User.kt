@@ -9,4 +9,5 @@ data class User(
     val userPrompt: String?,
     val photos: List<Photo> = listOf(),
     val generationsNumber: Int,
+    val isAcceptedRules: Boolean
 )

@@ -7,20 +7,22 @@ import kotlin.io.path.readBytes
 
 const val GEN_IMAGE_BOT_EXAMPLES = "~/gen-image-bot/examples/"
 
-enum class LocalImage(val path: String) {
-        REALISTIC_EXAMPLE_1("realistic_example.jpeg")
+enum class LocalFile(val path: String) {
+    REALISTIC_EXAMPLE_1("realistic_example.jpeg"),
+    RULES_OF_USE("rules_of_use.pdf"),
+    CONFIDENTIAL_POLICY("confidential_policy.pdf")
 }
 
 @Service
-class ExamplesLocalImageLoader : LocalImageLoader(GEN_IMAGE_BOT_EXAMPLES)
+class ExamplesLocalFileLoader : LocalImageLoader(GEN_IMAGE_BOT_EXAMPLES)
 
 open class LocalImageLoader(private val rootPath: String) {
     private val homeDirectory = System.getProperty("user.home")
-    private val cache = ConcurrentHashMap<LocalImage, ByteArray>()
+    private val cache = ConcurrentHashMap<LocalFile, ByteArray>()
 
-    fun loadImage(localImage: LocalImage): ByteArray =
-        cache.getOrPut(localImage) {
-            Path.of("$rootPath/${localImage.path}".replace("~", homeDirectory)).readBytes()
+    fun loadFile(localFile: LocalFile): ByteArray =
+        cache.getOrPut(localFile) {
+            Path.of("$rootPath/${localFile.path}".replace("~", homeDirectory)).readBytes()
         }
 
 }

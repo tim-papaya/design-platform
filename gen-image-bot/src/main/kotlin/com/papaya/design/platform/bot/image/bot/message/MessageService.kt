@@ -3,7 +3,8 @@ package com.papaya.design.platform.bot.image.bot.message
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.TelegramFile
-import com.github.kotlintelegrambot.network.ResponseError
+import com.github.kotlintelegrambot.entities.inputmedia.InputMediaDocument
+import com.github.kotlintelegrambot.entities.inputmedia.MediaGroup
 import com.github.kotlintelegrambot.network.fold
 import com.papaya.design.platform.ai.photo.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
@@ -11,9 +12,10 @@ import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.toEntity
 import com.papaya.design.platform.bot.image.bot.static.Error
 import com.papaya.design.platform.bot.image.bot.static.General
+import com.papaya.design.platform.bot.image.bot.static.Rules.POLICY_FILE_NAME
+import com.papaya.design.platform.bot.image.bot.static.Rules.RULES_FILE_NAME
 import com.papaya.design.platform.bot.image.bot.user.UserService
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 
@@ -23,7 +25,7 @@ private val log = KotlinLogging.logger { }
 @Service
 class MessageService(
     private val userService: UserService,
-    private val imageLoader: ExamplesLocalImageLoader,
+    private val fileLoader: ExamplesLocalFileLoader,
     private val bot: Bot
 ) {
 
@@ -53,7 +55,7 @@ class MessageService(
             caption = commandState.textToShow,
             replyMarkup = onlyBackKeyboard(),
             photo = TelegramFile.ByByteArray(
-                fileBytes = imageLoader.loadImage(commandState.exampleImages.first()),
+                fileBytes = fileLoader.loadFile(commandState.exampleImages.first()),
                 filename = "example_interior_${System.currentTimeMillis()}.jpeg"
             ),
         )
@@ -101,6 +103,7 @@ class MessageService(
     fun sendMessageAndReturnToMainMenu(id: TelegramId, message: String) {
         userService.saveUser(id) { u ->
             u.userState = UserState.READY_FOR_CMD
+            u.photos = listOf()
         }
 
         bot.sendMessage(
@@ -155,5 +158,21 @@ class MessageService(
             chatId = ChatId.fromId(id.chatId),
             text = message,
         )
+    }
+
+    fun sendDocument(id: TelegramId, localFile: LocalFile, showedFileName: String) {
+        val doc = fileLoader.loadFile(localFile)
+        bot.sendDocument(ChatId.fromId(id.chatId), TelegramFile.ByByteArray(doc, showedFileName))
+    }
+
+    fun sendRules(id: TelegramId) {
+        sendMessageAndReturnToMainMenu(id, General.Text.RULES_TEXTS)
+
+        sendDocument(id, LocalFile.RULES_OF_USE, RULES_FILE_NAME)
+        sendDocument(id, LocalFile.CONFIDENTIAL_POLICY, POLICY_FILE_NAME)
+
+        userService.saveUser(id) { u ->
+            u.isAcceptedRules = true
+        }
     }
 }

@@ -13,32 +13,32 @@ class ImageGenerationStrategy(
     val newState: UserState,
     val textToShow: String,
     val stateToReturn: UserState,
-    val exampleImages: List<LocalImage> = listOf()
+    val exampleImages: List<LocalFile> = listOf()
 ) : CommandState() {
     companion object {
         val START_REALISTIC_INTERIOR_GENERATION = ImageGenerationStrategy(
             newState = REALISTIC_INTERIOR_WAITING_FOR_PHOTO,
             textToShow = RealisticInterior.Text.START_GENERATION,
             stateToReturn = READY_FOR_CMD,
-            exampleImages = listOf(LocalImage.REALISTIC_EXAMPLE_1),
+            exampleImages = listOf(LocalFile.REALISTIC_EXAMPLE_1),
         )
         val START_ROOM_UPGRADE_GENERATION = ImageGenerationStrategy(
             newState = ROOM_UPGRADE_WAITING_FOR_PHOTO,
             textToShow = RoomUpgrade.Text.START_GENERATION,
             stateToReturn = READY_FOR_CMD,
-            exampleImages = listOf(LocalImage.REALISTIC_EXAMPLE_1),
+            exampleImages = listOf(LocalFile.REALISTIC_EXAMPLE_1),
         )
         val START_EXTENDED_REALISTIC_INTERIOR_GENERATION = ImageGenerationStrategy(
             newState = EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO,
             textToShow = ExtendedRealisticInterior.Text.START_GENERATION,
             stateToReturn = READY_FOR_CMD,
-            exampleImages = listOf(LocalImage.REALISTIC_EXAMPLE_1),
+            exampleImages = listOf(LocalFile.REALISTIC_EXAMPLE_1),
         )
         val START_PLANED_REALISTIC_INTERIOR_GENERATION = ImageGenerationStrategy(
             newState = PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO,
             textToShow = PlannedRealisticInterior.Text.START_GENERATION,
             stateToReturn = READY_FOR_CMD,
-            exampleImages = listOf(LocalImage.REALISTIC_EXAMPLE_1),
+            exampleImages = listOf(LocalFile.REALISTIC_EXAMPLE_1),
         )
     }
 }

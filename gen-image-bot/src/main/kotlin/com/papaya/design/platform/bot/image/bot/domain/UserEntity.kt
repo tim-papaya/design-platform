@@ -19,6 +19,8 @@ class UserEntity {
 
     var userPrompt: String? = null
 
+    var isAcceptedRules: Boolean = false
+
     @OneToMany(
         fetch = FetchType.EAGER,
         cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE],
@@ -35,7 +37,8 @@ fun UserEntity.toModel() =
         this.userName,
         this.userPrompt,
         this.photos.map { it.toModel() },
-        this.generations
+        this.generations,
+        isAcceptedRules
     )
 
 fun User.toEntity() =
@@ -46,4 +49,5 @@ fun User.toEntity() =
         it.userPrompt = this.userPrompt
         it.photos = this.photos.map { it.toEntity() }
         it.generations = this.generationsNumber
+        it.isAcceptedRules = this.isAcceptedRules
     }
