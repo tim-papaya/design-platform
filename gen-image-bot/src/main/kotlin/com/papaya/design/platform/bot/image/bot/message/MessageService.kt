@@ -171,6 +171,8 @@ class MessageService(
         sendDocument(id, LocalFile.RULES_OF_USE, RULES_FILE_NAME)
         sendDocument(id, LocalFile.CONFIDENTIAL_POLICY, POLICY_FILE_NAME)
 
+        log.info {"User $id accepted rules and policy"}
+
         userService.saveUser(id) { u ->
             u.isAcceptedRules = true
         }

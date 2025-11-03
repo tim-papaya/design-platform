@@ -16,12 +16,12 @@ enum class KeyboardInputButton(val text: String) {
     OPTION_FOR_RENT("💲 Для аренды"),
     CANCEL("⬆ В главное меню"),
     EXTENDED_REALISTIC_INTERIOR_READY_FOR_GENERATION("✨ Готово"),
-    KITCHEN("Столовая"),
+    KITCHEN("Кухня"),
     BEDROOM("Спальня"),
     GUESTROOM("Гостиная"),
     SUPPORT("🩹 Сообщить о проблеме"),
     PAYMENT("💲 Купить генерации"),
-    CHECK_STATUS("Проверить баланс")
+    CHECK_STATUS("💸 Проверить баланс")
 }
 
 fun createMainKeyboard(): KeyboardReplyMarkup {

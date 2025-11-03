@@ -20,7 +20,7 @@ class CachedUserService(
     private val userRepository: UserRepository,
 ) : UserService {
 
-    @Cacheable(value = ["users"], key = "#userId")
+//    @Cacheable(value = ["users"], key = "#userId")
     override fun getUser(userId: Long): User {
         log.debug { "Get user $userId from db" }
         val result = userRepository.findByUserId(userId)
@@ -28,7 +28,7 @@ class CachedUserService(
         return result?.toModel() ?: throw IllegalStateException("User not found")
     }
 
-    @Cacheable(value = ["users"], key = "#userId")
+//    @Cacheable(value = ["users"], key = "#userId")
     override fun getUserOrNull(userId: Long): User? {
         log.debug { "Get user $userId from db" }
         val result = userRepository.findByUserId(userId)
@@ -36,7 +36,7 @@ class CachedUserService(
         return result?.toModel()
     }
 
-    @CachePut(value = ["users"], key = "#userId.userId")
+//    @CachePut(value = ["users"], key = "#userId.userId")
     override fun saveUser(
         userId: TelegramId,
         changeMapper: (UserEntity) -> Unit
@@ -52,7 +52,7 @@ class CachedUserService(
         return userRepository.save(entity).toModel()
     }
 
-    @CachePut(value = ["users"], key = "#userId")
+//    @CachePut(value = ["users"], key = "#userId")
     override fun saveUser(
         userId: Long,
         changeMapper: (UserEntity) -> Unit

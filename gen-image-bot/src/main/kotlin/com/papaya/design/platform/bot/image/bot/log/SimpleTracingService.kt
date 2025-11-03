@@ -1,6 +1,7 @@
 package com.papaya.design.platform.bot.image.bot.log
 
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
@@ -8,7 +9,7 @@ import java.time.LocalDateTime
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
-@Service
+//@Service
 class DummyTracingService : TracingService {
     override fun logPrompt(chatId: Long, prompt: String) {
     }
@@ -20,6 +21,7 @@ class DummyTracingService : TracingService {
     }
 }
 
+@Service
 class SimpleTracingService(
     @Value("\${com.papaya.design.platform.bot.image.trace-log.path:}")
     private val logPath: String

@@ -8,7 +8,10 @@ import kotlin.io.path.readBytes
 const val GEN_IMAGE_BOT_EXAMPLES = "~/gen-image-bot/examples/"
 
 enum class LocalFile(val path: String) {
-    REALISTIC_EXAMPLE_1("realistic_example.jpeg"),
+    REALISTIC_EXAMPLE("realistic_example.jpeg"),
+    ROOM_UPDATE("room_update_example.jpeg"),
+    AI_UPDATE("ai_update_example.jpeg"),
+    MOOD_BOARD_GENERATE("mood_board_generate_example.jpeg"),
     RULES_OF_USE("rules_of_use.pdf"),
     CONFIDENTIAL_POLICY("confidential_policy.pdf")
 }
