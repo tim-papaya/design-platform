@@ -2,20 +2,15 @@ package com.papaya.design.platform.ai.openai
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.papaya.design.platform.ai.AiImageService
-import com.papaya.design.platform.ai.HttpClientService
+import com.papaya.design.platform.ai.DelegateAiImageService
 import com.papaya.design.platform.ai.extractImageInB64
 import com.papaya.design.platform.ai.photo.PhotoWithContent
-import mu.KotlinLogging
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MultipartBody
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 
 @Profile("test")
 @Service
+@DelegateAiImageService
 class MockImageService(
     private val objectMapper: ObjectMapper,
 ) : AiImageService {

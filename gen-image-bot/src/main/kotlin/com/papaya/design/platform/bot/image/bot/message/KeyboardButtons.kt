@@ -3,13 +3,16 @@ package com.papaya.design.platform.bot.image.bot.message
 import com.github.kotlintelegrambot.entities.KeyboardReplyMarkup
 import com.github.kotlintelegrambot.entities.ReplyKeyboardRemove
 import com.github.kotlintelegrambot.entities.keyboard.KeyboardButton
+import com.papaya.design.platform.bot.image.bot.domain.User
+import com.papaya.design.platform.bot.image.bot.input.VideoUserInputSelectingMode
 import com.papaya.design.platform.bot.image.bot.message.KeyboardInputButton.*
 import com.papaya.design.platform.bot.image.bot.payment.PaymentAmount
 
 enum class KeyboardInputButton(val text: String) {
     GENERATE_REALISTIC_INTERIOR("🖼️ 3D-визуализация по коллажу"),
+    GENERATE_REALISTIC_INTERIOR_BATCH("📦(Дизайнер) 3D-визуализация пачкой"),
     GENERATE_EXTENDED_REALISTIC_INTERIOR("🏡 Обновление по вашему фото или описанию"),
-    ROOM_UPGRADE("🔼 Обновление с помощью ИИ-алгоритмов"),
+    ROOM_UPGRADE("🔼 Декорирование с помощью ИИ-алгоритмов"),
     PLANNED_REALISTIC_INTERIOR("📋 3D-визуализация по мудборду"),
     START("✨ Начать"),
     OPTION_FOR_SELF("🏠 Для себя"),
@@ -21,20 +24,27 @@ enum class KeyboardInputButton(val text: String) {
     GUESTROOM("Гостиная"),
     SUPPORT("🩹 Сообщить о проблеме"),
     PAYMENT("💲 Купить генерации"),
-    CHECK_STATUS("💸 Проверить баланс")
+    CHECK_STATUS("💸 Проверить баланс"),
+    GENERATE_VIDEO("🎬 Видео по вашему фото"),
 }
 
-fun createMainKeyboard(): KeyboardReplyMarkup {
+fun createMainKeyboard(user: User): KeyboardReplyMarkup {
     return KeyboardReplyMarkup(
-        keyboard = listOf(
-            listOf(KeyboardButton(GENERATE_REALISTIC_INTERIOR.text)),
-            listOf(KeyboardButton(GENERATE_EXTENDED_REALISTIC_INTERIOR.text)),
-            listOf(KeyboardButton(ROOM_UPGRADE.text)),
-            listOf(KeyboardButton(PLANNED_REALISTIC_INTERIOR.text)),
-            listOf(KeyboardButton(PAYMENT.text)),
-            listOf(KeyboardButton(SUPPORT.text)),
-            listOf(KeyboardButton(CHECK_STATUS.text)),
-        ),
+        keyboard =
+            listOf(
+                listOf(KeyboardButton(GENERATE_REALISTIC_INTERIOR.text)),
+                listOf(KeyboardButton(GENERATE_EXTENDED_REALISTIC_INTERIOR.text)),
+                listOf(KeyboardButton(ROOM_UPGRADE.text)),
+                listOf(KeyboardButton(PLANNED_REALISTIC_INTERIOR.text)),
+                listOf(KeyboardButton(GENERATE_VIDEO.text)),
+                listOf(KeyboardButton(PAYMENT.text)),
+                listOf(KeyboardButton(CHECK_STATUS.text)),
+                listOf(KeyboardButton(SUPPORT.text)),
+            ).let {
+                if (!user.isDesigner) it else {
+                    listOf(listOf(KeyboardButton(GENERATE_REALISTIC_INTERIOR_BATCH.text))) + it
+                }
+            },
         resizeKeyboard = true,
         oneTimeKeyboard = true
     )
@@ -67,6 +77,17 @@ fun prepareForExtendedRealisticGeneration(): KeyboardReplyMarkup {
     )
 }
 
+fun realisticInteriorBatchKeyboard(): KeyboardReplyMarkup {
+    return KeyboardReplyMarkup(
+        keyboard = listOf(
+            listOf(KeyboardButton(START.text)),
+            listOf(KeyboardButton(CANCEL.text))
+        ),
+        resizeKeyboard = true,
+        oneTimeKeyboard = false
+    )
+}
+
 fun onlyBackKeyboard(): KeyboardReplyMarkup {
     return KeyboardReplyMarkup(
         keyboard = listOf(
@@ -74,6 +95,16 @@ fun onlyBackKeyboard(): KeyboardReplyMarkup {
                 KeyboardButton(CANCEL.text),
             )
         ),
+        resizeKeyboard = true,
+        oneTimeKeyboard = true
+    )
+}
+
+fun videoModes(): KeyboardReplyMarkup {
+    return KeyboardReplyMarkup(
+        keyboard = VideoUserInputSelectingMode.entries
+            .map { listOf(KeyboardButton(it.textShowingToUser)) }
+            .plus(listOf(listOf(KeyboardButton(CANCEL.text)))),
         resizeKeyboard = true,
         oneTimeKeyboard = true
     )
@@ -96,7 +127,7 @@ fun planedKeyboard(): KeyboardReplyMarkup {
     )
 }
 
-fun paymentKeyboard() : KeyboardReplyMarkup {
+fun paymentKeyboard(): KeyboardReplyMarkup {
     return KeyboardReplyMarkup(
         keyboard = listOf(
             listOf(KeyboardButton(PaymentAmount.LOWEST_GENERATION_PACKET.label)),

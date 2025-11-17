@@ -10,6 +10,9 @@ data class Photo(
         HORIZONTAL, VERTICAL, SQUARE
     }
 
+    val sizeAsString: String
+        get() = "${width}x${height}"
+
     val imageOrientation: Orientation
         get() = when {
             width.toDouble() / height.toDouble() >= 1.29 -> Orientation.HORIZONTAL

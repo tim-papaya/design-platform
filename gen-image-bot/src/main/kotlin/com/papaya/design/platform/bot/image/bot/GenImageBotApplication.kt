@@ -18,5 +18,3 @@ fun main(args: Array<String>) {
 @PropertySource("file:\${user.home}/.app-config/design-platform/db.props")
 @EnableCaching
 class GenImageBotApplication
-
-

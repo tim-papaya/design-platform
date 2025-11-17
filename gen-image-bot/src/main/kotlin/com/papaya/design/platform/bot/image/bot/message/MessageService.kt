@@ -8,6 +8,7 @@ import com.github.kotlintelegrambot.entities.inputmedia.MediaGroup
 import com.github.kotlintelegrambot.network.fold
 import com.papaya.design.platform.ai.photo.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
+import com.papaya.design.platform.bot.image.bot.domain.UserEntity
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.toEntity
 import com.papaya.design.platform.bot.image.bot.static.Error
@@ -37,7 +38,7 @@ class MessageService(
         bot.sendMessage(
             chatId = ChatId.Companion.fromId(userId.userId),
             text = General.Text.WELCOME_MESSAGE,
-            replyMarkup = createMainKeyboard()
+            replyMarkup = createMainKeyboard(user)
         )
         return user
     }
@@ -53,7 +54,7 @@ class MessageService(
         val result = bot.sendPhoto(
             chatId = ChatId.fromId(id.chatId),
             caption = commandState.textToShow,
-            replyMarkup = onlyBackKeyboard(),
+            replyMarkup = commandState.replyMarkup,
             photo = TelegramFile.ByByteArray(
                 fileBytes = fileLoader.loadFile(commandState.exampleImages.first()),
                 filename = "example_interior_${System.currentTimeMillis()}.jpeg"
@@ -71,28 +72,38 @@ class MessageService(
 
     fun sendGenerationCompletionMessage(
         id: TelegramId,
-        successMessage: String
+        successMessage: String,
+        generationCount: Int = 1
     ) {
-        userService.saveUser(id) { u ->
+        val user = userService.saveUser(id) { u ->
             u.userState = UserState.READY_FOR_CMD
-            u.generations -= 1
+            u.generations -= generationCount
         }
 
         bot.sendMessage(
             chatId = ChatId.fromId(id.chatId),
             text = General.Text.NEXT_STEP,
-            replyMarkup = createMainKeyboard()
+            replyMarkup = createMainKeyboard(user)
         )
         log.info("$successMessage in $id")
     }
 
-    fun sendErrorMessage(id: TelegramId, internalErrorMessage: String, e: Exception) {
-        sendMessageAndReturnToMainMenu(id, Error.Text.ERROR_ON_PROCESSING_IMAGE)
+    fun sendErrorMessage(
+        id: TelegramId,
+        internalErrorMessage: String,
+        e: Exception,
+        textToUser: String = Error.Text.ERROR_ON_PROCESSING_IMAGE
+    ) {
+        sendMessageAndReturnToMainMenu(id, textToUser)
         log.error("$internalErrorMessage: ${e.message}", e)
     }
 
-    fun sendErrorMessage(id: TelegramId, internalErrorMessage: String) {
-        sendMessageAndReturnToMainMenu(id, Error.Text.ERROR_ON_PROCESSING_IMAGE)
+    fun sendErrorMessage(
+        id: TelegramId,
+        internalErrorMessage: String,
+        textToUser: String = Error.Text.ERROR_ON_PROCESSING_IMAGE
+    ) {
+        sendMessageAndReturnToMainMenu(id, textToUser)
         log.error(internalErrorMessage)
     }
 
@@ -101,7 +112,7 @@ class MessageService(
     }
 
     fun sendMessageAndReturnToMainMenu(id: TelegramId, message: String) {
-        userService.saveUser(id) { u ->
+        val user = userService.saveUser(id) { u ->
             u.userState = UserState.READY_FOR_CMD
             u.photos = listOf()
         }
@@ -109,7 +120,7 @@ class MessageService(
         bot.sendMessage(
             chatId = ChatId.fromId(id.chatId),
             text = message,
-            replyMarkup = createMainKeyboard()
+            replyMarkup = createMainKeyboard(user)
         )
     }
 
@@ -141,9 +152,10 @@ class MessageService(
         }
     }
 
-    fun sendStateMessage(id: TelegramId, userState: UserState) {
+    fun sendStateMessage(id: TelegramId, userState: UserState, userAction: (UserEntity) -> Unit = {}) {
         userService.saveUser(id) { u ->
             u.userState = userState
+            userAction.invoke(u)
         }
 
         bot.sendMessage(
@@ -171,7 +183,7 @@ class MessageService(
         sendDocument(id, LocalFile.RULES_OF_USE, RULES_FILE_NAME)
         sendDocument(id, LocalFile.CONFIDENTIAL_POLICY, POLICY_FILE_NAME)
 
-        log.info {"User $id accepted rules and policy"}
+        log.info { "User $id accepted rules and policy" }
 
         userService.saveUser(id) { u ->
             u.isAcceptedRules = true

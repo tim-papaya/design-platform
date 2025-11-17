@@ -22,6 +22,8 @@ import com.papaya.design.platform.bot.image.bot.payment.PaymentAmount
 import com.papaya.design.platform.bot.image.bot.payment.PaymentService
 import com.papaya.design.platform.bot.image.bot.static.*
 import com.papaya.design.platform.bot.image.bot.user.UserService
+import com.papaya.design.platform.bot.image.bot.workflow.GenImageStepProcessor
+import com.papaya.design.platform.bot.image.bot.workflow.GenImageUserState
 import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -40,7 +42,8 @@ class TelegramBotService(
     private val userService: UserService,
     @Value("\${support.admin.id}")
     private val supportId: Long,
-) : BotService {
+
+    ) : BotService {
     @Autowired
     lateinit var messageService: MessageService
 
@@ -49,6 +52,9 @@ class TelegramBotService(
 
     @Autowired
     lateinit var imageMessageService: ImageMessageService
+
+    @Autowired
+    lateinit var stepProcessor: GenImageStepProcessor
 
     @Bean
     fun bot(): Bot = bot {
@@ -74,6 +80,20 @@ class TelegramBotService(
                     bot.sendMessage(ChatId.fromId(it), text)
                 }
             }
+            command(TelegramCommand.SEND_ONE.text) {
+                val id = message.telegramId()
+                val userIdAndText = messageWithoutCommand(message.text)
+                val userIdToSend = userIdAndText?.substringBefore(" ")?.toLongOrNull()
+                val text = userIdAndText?.substringAfter(" ")
+                if (id.userId != supportId) return@command
+
+                if (userIdToSend == null || text == null) {
+                    messageService.sendWarningMessage(id, "Where is no text to send")
+                    return@command
+                }
+                bot.sendMessage(ChatId.fromId(userIdToSend), text)
+            }
+
             preCheckoutQuery {
                 log.info { "Confirming payment ${preCheckoutQuery.id} ${preCheckoutQuery.totalAmount}" }
                 bot.answerPreCheckoutQuery(preCheckoutQuery.id, true)
@@ -94,13 +114,15 @@ class TelegramBotService(
                 val user = userService.getUserOrNull(id.userId)
                     ?: messageService.sendFirstTimeWelcome(id)
 
+
                 try {
                     if (!user.isAcceptedRules) {
                         messageService.sendRules(id)
                     }
 
                     val messageText = message.text
-                    val photos = extractPhotoFromMessage()
+                    val photos = extractLastPhotoFromMessage()
+                    val genImageUserState = GenImageUserState(id, messageText, photos)
 
                     if (messageText == KeyboardInputButton.CANCEL.text) {
                         messageService.sendMessageAndReturnToMainMenu(id, General.Text.NEXT_STEP)
@@ -121,6 +143,21 @@ class TelegramBotService(
                                     }
                                     messageService.sendWaitingForPhotoMessage(
                                         id, ImageGenerationStrategy.START_REALISTIC_INTERIOR_GENERATION
+                                    )
+                                }
+
+                                KeyboardInputButton.GENERATE_REALISTIC_INTERIOR_BATCH.text -> {
+                                    if (!user.isDesigner) return@message
+
+                                    if (!paymentService.hasAvailableGenerations(id)) {
+                                        messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
+                                        return@message
+                                    }
+                                    userService.saveUser(id) { u ->
+                                        u.photos = listOf()
+                                    }
+                                    messageService.sendWaitingForPhotoMessage(
+                                        id, ImageGenerationStrategy.START_REALISTIC_INTERIOR_BATCH_GENERATION
                                     )
                                 }
 
@@ -154,6 +191,15 @@ class TelegramBotService(
                                     )
                                 }
 
+                                KeyboardInputButton.GENERATE_VIDEO.text -> {
+                                    if (!paymentService.hasAvailableGenerations(id, GENERATION_COUNT_FOR_VIDEO)) {
+                                        messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
+                                        return@message
+                                    }
+
+                                    messageService.sendStateMessage(id, VIDEO_WAITING_FOR_PHOTO)
+                                }
+
                                 KeyboardInputButton.PAYMENT.text -> {
                                     messageService.sendStateMessage(id, SELECTING_PAYMENT_OPTION)
                                 }
@@ -174,7 +220,6 @@ class TelegramBotService(
                                 }
                             }
                         }
-
                         REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
                             if (photos != null) {
                                 imageMessageService.handlePhotoMessage(
@@ -248,7 +293,7 @@ class TelegramBotService(
                             bot.sendMessage(
                                 chatId = ChatId.fromId(id.chatId),
                                 text = General.Text.IMAGE_STILL_GENERATING,
-                                replyMarkup = removeKeyboard(),
+                                replyMarkup = onlyBackKeyboard(),
                             )
                         }
 
@@ -384,6 +429,9 @@ class TelegramBotService(
 
                         }
 
+                        else -> {
+                            stepProcessor.process(user.userState, genImageUserState)
+                        }
                     }
                 } catch (e: Exception) {
                     log.error(e) { "Unknown error" }
@@ -405,7 +453,7 @@ class TelegramBotService(
         log.info { "Telegram bot started" }
     }
 
-    private fun MessageHandlerEnvironment.extractPhotoFromMessage(): List<Photo>? =
+    private fun MessageHandlerEnvironment.extractLastPhotoFromMessage(): List<Photo>? =
         message.photo
             ?.sortedBy { it.fileSize }
             ?.map {
@@ -417,6 +465,14 @@ class TelegramBotService(
                 it.last()
             }?.let { Photo(it.fileId, it.fileUniqueId, it.width, it.height) }
             ?.let { listOf(it) }
+
+    private fun MessageHandlerEnvironment.extractAllPhotosFromMessage(): List<Photo>? =
+        message.photo
+            ?.sortedBy { it.fileSize }
+            ?.map {
+                log.info { "Received file id:uid:size:WxH - ${it.fileId}:${it.fileUniqueId}:${it.fileSize}:${it.width}x${it.height}" }
+                it
+            }?.map { Photo(it.fileId, it.fileUniqueId, it.width, it.height) }
 }
 
 private fun messageWithoutCommand(text: String?): String? =

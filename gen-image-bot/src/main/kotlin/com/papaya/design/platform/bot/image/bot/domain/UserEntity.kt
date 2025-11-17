@@ -28,6 +28,8 @@ class UserEntity {
     )
     @JoinColumn(name = "user_unique_id", nullable = false)
     var photos: List<PhotoEntity> = listOf()
+
+    var isDesigner: Boolean = false
 }
 
 fun UserEntity.toModel() =
@@ -38,7 +40,8 @@ fun UserEntity.toModel() =
         this.userPrompt,
         this.photos.map { it.toModel() },
         this.generations,
-        isAcceptedRules
+        isAcceptedRules,
+        isDesigner
     )
 
 fun User.toEntity() =
@@ -50,4 +53,5 @@ fun User.toEntity() =
         it.photos = this.photos.map { it.toEntity() }
         it.generations = this.generationsNumber
         it.isAcceptedRules = this.isAcceptedRules
+        it.isDesigner = this.isDesigner
     }

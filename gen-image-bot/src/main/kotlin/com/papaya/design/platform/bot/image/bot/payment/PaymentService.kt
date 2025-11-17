@@ -25,8 +25,8 @@ class PaymentService(
     private val userService: UserService
 ) {
 
-    fun hasAvailableGenerations(id: TelegramId): Boolean =
-        userService.getUser(id.userId).generationsNumber > 0
+    fun hasAvailableGenerations(id: TelegramId, min: Int = 1): Boolean =
+        userService.getUser(id.userId).generationsNumber >= min
 
     fun sendInvoice(id: TelegramId, paymentAmount: PaymentAmount) {
         bot.sendInvoice(

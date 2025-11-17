@@ -1,10 +1,10 @@
 spring:
   main:
     allow-circular-references: true
+    web-application-type: none
   datasource:
     hikari:
-      #      TODO FOR PROD AT LEAST 10
-      maximum-pool-size: 2
+      maximum-pool-size: 5
   jpa:
     open-in-view: false
     hibernate:
@@ -24,3 +24,12 @@ spring:
     # Если база уже непустая и вы начинаете вести миграции с текущего состояния:
     # baseline-on-migrate: true
     # baseline-version: 0
+kling:
+  api:
+    base-url: "https://api.klingai.com"
+    image-to-video-path: "/v1/videos/image2video"
+
+runware:
+  api:
+    base-url: "https://api.runware.ai/v1"
+    image-to-video-path: "https://api.runware.ai/v1"
