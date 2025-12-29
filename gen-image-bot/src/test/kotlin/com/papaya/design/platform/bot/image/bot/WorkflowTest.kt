@@ -16,6 +16,6 @@ class WorkflowTest {
 
     @Test
     fun `should register all steps`() {
-        assertEquals(3, genImageStepProcessor.steps.size)
+        assertEquals(4, genImageStepProcessor.steps.size)
     }
 }

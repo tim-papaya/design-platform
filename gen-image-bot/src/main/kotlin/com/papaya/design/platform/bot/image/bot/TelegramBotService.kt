@@ -92,6 +92,7 @@ class TelegramBotService(
                     return@command
                 }
                 bot.sendMessage(ChatId.fromId(userIdToSend), text)
+                bot.sendMessage(ChatId.fromId(supportId), "Sent message to $userIdToSend")
             }
 
             preCheckoutQuery {
