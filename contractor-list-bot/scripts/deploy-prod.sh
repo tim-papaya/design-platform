@@ -1,4 +1,4 @@
-HOST=contractors_bot@185.200.176.225
+HOST=contractors_bot@88.218.121.117
 BOT_DIR=contractor-list-bot
 JAR_NAME=contractor-list-bot.jar
 
