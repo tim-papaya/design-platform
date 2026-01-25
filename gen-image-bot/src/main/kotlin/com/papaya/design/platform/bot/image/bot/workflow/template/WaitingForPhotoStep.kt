@@ -3,6 +3,8 @@ package com.papaya.design.platform.bot.image.bot.workflow.template
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.toEntity
 import com.papaya.design.platform.bot.image.bot.message.MessageService
+import com.papaya.design.platform.bot.image.bot.payment.PaymentService
+import com.papaya.design.platform.bot.image.bot.static.Error
 import com.papaya.design.platform.bot.image.bot.workflow.GenImageUserState
 import com.papaya.design.platform.bot.tg.core.command.workflow.Step
 import mu.KotlinLogging
@@ -11,11 +13,17 @@ private val log = KotlinLogging.logger { }
 
 open class WaitingForPhotoStep(
     private val messageService: MessageService,
+    private val paymentService: PaymentService,
     override val current: UserState,
     override val next: UserState,
     override val previous: UserState,
 ) : Step<UserState, GenImageUserState> {
     override fun perform(state: GenImageUserState) {
+        if (!paymentService.hasAvailableGenerations(state.id)) {
+            messageService.sendWarningMessage(state.id, Error.Text.ERROR_HAS_NO_GENERATIONS)
+            return
+        }
+
         val photos = state.photos
         val id = state.id
 

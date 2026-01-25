@@ -54,6 +54,7 @@ class WorkflowConfig(
     fun videoWaitingForPhoto() =
         WaitingForPhotoStep(
             messageService,
+            paymentService,
             current = VIDEO_WAITING_FOR_PHOTO,
             next = VIDEO_WAITING_FOR_FOR_USER_SELECTING_MODE,
             previous = READY_FOR_CMD

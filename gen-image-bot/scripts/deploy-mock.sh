@@ -1,4 +1,4 @@
-HOST=image_bot@88.218.121.117
+HOST=image_bot@45.114.60.236
 
 ./gradlew build
 ssh $HOST 'mkdir -p ~/gen-image-bot/logs ~/gen-image-bot/trace'

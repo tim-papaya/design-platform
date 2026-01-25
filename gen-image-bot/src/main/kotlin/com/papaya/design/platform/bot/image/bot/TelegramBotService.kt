@@ -138,10 +138,6 @@ class TelegramBotService(
                                 }
 
                                 KeyboardInputButton.GENERATE_REALISTIC_INTERIOR.text -> {
-                                    if (!paymentService.hasAvailableGenerations(id)) {
-                                        messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
-                                        return@message
-                                    }
                                     messageService.sendWaitingForPhotoMessage(
                                         id, ImageGenerationStrategy.START_REALISTIC_INTERIOR_GENERATION
                                     )
@@ -163,41 +159,24 @@ class TelegramBotService(
                                 }
 
                                 KeyboardInputButton.ROOM_UPGRADE.text -> {
-                                    if (!paymentService.hasAvailableGenerations(id)) {
-                                        messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
-                                        return@message
-                                    }
                                     messageService.sendWaitingForPhotoMessage(
                                         id, ImageGenerationStrategy.START_ROOM_UPGRADE_GENERATION
                                     )
                                 }
 
                                 KeyboardInputButton.GENERATE_EXTENDED_REALISTIC_INTERIOR.text -> {
-                                    if (!paymentService.hasAvailableGenerations(id)) {
-                                        messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
-                                        return@message
-                                    }
                                     messageService.sendWaitingForPhotoMessage(
                                         id, ImageGenerationStrategy.START_EXTENDED_REALISTIC_INTERIOR_GENERATION
                                     )
                                 }
 
                                 KeyboardInputButton.PLANNED_REALISTIC_INTERIOR.text -> {
-                                    if (!paymentService.hasAvailableGenerations(id)) {
-                                        messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
-                                        return@message
-                                    }
                                     messageService.sendWaitingForPhotoMessage(
                                         id, ImageGenerationStrategy.START_PLANED_REALISTIC_INTERIOR_GENERATION
                                     )
                                 }
 
                                 KeyboardInputButton.GENERATE_VIDEO.text -> {
-                                    if (!paymentService.hasAvailableGenerations(id, GENERATION_COUNT_FOR_VIDEO)) {
-                                        messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
-                                        return@message
-                                    }
-
                                     messageService.sendStateMessage(id, VIDEO_WAITING_FOR_PHOTO)
                                 }
 
@@ -222,6 +201,11 @@ class TelegramBotService(
                             }
                         }
                         REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
+                            if (!paymentService.hasAvailableGenerations(id)) {
+                                messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
+                                return@message
+                            }
+
                             if (photos != null) {
                                 imageMessageService.handlePhotoMessage(
                                     id, photos, StartGenerationOfImage.REALISTIC_INTERIOR,
@@ -236,6 +220,11 @@ class TelegramBotService(
                         }
 
                         ROOM_UPGRADE_WAITING_FOR_PHOTO -> {
+                            if (!paymentService.hasAvailableGenerations(id)) {
+                                messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
+                                return@message
+                            }
+
                             if (photos != null) {
                                 userService.saveUser(id) { u ->
                                     u.photos = photos.map { it.toEntity() }
@@ -299,6 +288,11 @@ class TelegramBotService(
                         }
 
                         EXTENDED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
+                            if (!paymentService.hasAvailableGenerations(id)) {
+                                messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
+                                return@message
+                            }
+
                             if (photos != null) {
                                 userService.saveUser(id) { u ->
                                     u.photos = photos.map { it.toEntity() }
@@ -369,6 +363,11 @@ class TelegramBotService(
                         }
 
                         PLANNED_REALISTIC_INTERIOR_WAITING_FOR_PHOTO -> {
+                            if (!paymentService.hasAvailableGenerations(id)) {
+                                messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
+                                return@message
+                            }
+
                             // TODO VALIDATE PHOTOS
                             userService.saveUser(id) { u ->
                                 u.photos = listOf()
