@@ -25,6 +25,7 @@ import java.time.LocalDateTime
 private val log = KotlinLogging.logger {}
 
 private const val API_URL_IMAGES = "https://api.openai.com/v1/images/edits"
+private const val DEFAULT_OPENAI_IMAGE_MODEL = "gpt-image-1"
 
 @Profile("prod", "open-ai-image")
 @Service
@@ -39,6 +40,7 @@ class OpenAiImageService(
     override suspend fun generateImage(
         userPrompt: String?,
         systemPrompt: String,
+        model: String?,
         images: List<PhotoWithContent>,
         callback: (List<String>) -> Unit,
     ) {
@@ -46,7 +48,7 @@ class OpenAiImageService(
 
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart("model", "gpt-image-1")
+            .addFormDataPart("model", model?.trim().takeUnless { it.isNullOrEmpty() } ?: DEFAULT_OPENAI_IMAGE_MODEL)
             .addFormDataPart("prompt", "$systemPrompt\n$userPrompt")
             .addFormDataPart("output_format", "png")
             .addFormDataPart("quality", "high")

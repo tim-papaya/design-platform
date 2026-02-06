@@ -45,6 +45,7 @@ class ImageMessageService(
         photos: List<Photo>,
         commandState: StartGenerationOfImage,
         userPrompt: String? = null,
+        model: String? = null,
     ) {
         try {
             userService.saveUser(id) { u ->
@@ -82,6 +83,7 @@ class ImageMessageService(
                     aiImageService.generateImage(
                         userPrompt = userPrompt,
                         systemPrompt = commandState.systemPrompt,
+                        model = model,
                         images = resultPhotos,
                     ) { base64Images ->
                         val imageArray = base64Images

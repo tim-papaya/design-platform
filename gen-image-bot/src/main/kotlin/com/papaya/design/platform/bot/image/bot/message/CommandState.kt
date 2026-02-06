@@ -4,6 +4,7 @@ import com.github.kotlintelegrambot.entities.ReplyMarkup
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
 import com.papaya.design.platform.bot.image.bot.static.ExtendedRealisticInterior
+import com.papaya.design.platform.bot.image.bot.static.ObjectRotation
 import com.papaya.design.platform.bot.image.bot.static.PlannedRealisticInterior
 import com.papaya.design.platform.bot.image.bot.static.RealisticInterior
 import com.papaya.design.platform.bot.image.bot.static.RealisticInteriorBatch
@@ -50,6 +51,12 @@ class ImageGenerationStrategy(
             stateToReturn = READY_FOR_CMD,
             exampleImages = listOf(LocalFile.MOOD_BOARD_GENERATE),
         )
+        val START_OBJECT_ROTATION_GENERATION = ImageGenerationStrategy(
+            newState = ROTATION_OBJECT_WAITING_FOR_PHOTO,
+            textToShow = ObjectRotation.Text.START_GENERATION,
+            stateToReturn = READY_FOR_CMD,
+            exampleImages = listOf(LocalFile.REALISTIC_EXAMPLE),
+        )
     }
 }
 
@@ -68,6 +75,9 @@ class StartGenerationOfImage(
         )
         val PLANED_REALISTIC_INTERIOR = StartGenerationOfImage(
             systemPrompt = PlannedRealisticInterior.Prompt.SYSTEM_PROMPT
+        )
+        val OBJECT_ROTATION = StartGenerationOfImage(
+            systemPrompt = ObjectRotation.Prompt.SYSTEM_PROMPT
         )
     }
 }

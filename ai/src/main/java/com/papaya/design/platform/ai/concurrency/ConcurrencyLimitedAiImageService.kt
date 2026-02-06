@@ -36,6 +36,7 @@ class ConcurrencyLimitedAiImageService(
     override suspend fun generateImage(
         userPrompt: String?,
         systemPrompt: String,
+        model: String?,
         images: List<PhotoWithContent>,
         callback: (base64Images: List<String>) -> Unit
     ) {
@@ -45,7 +46,7 @@ class ConcurrencyLimitedAiImageService(
             val currentActive = activeRequests.incrementAndGet()
             log.info { "Image generation started: active=$currentActive limit=$maxConcurrentRequests" }
             try {
-                delegate.generateImage(userPrompt, systemPrompt, images, callback)
+                delegate.generateImage(userPrompt, systemPrompt, model, images, callback)
             } finally {
                 val remaining = activeRequests.decrementAndGet()
                 log.info { "Image generation finished: active=$remaining limit=$maxConcurrentRequests" }

@@ -17,6 +17,7 @@ class MockImageService(
     override suspend fun generateImage(
         userPrompt: String?,
         systemPrompt: String,
+        model: String?,
         images: List<PhotoWithContent>,
         callback: (List<String>) -> Unit
     ) {

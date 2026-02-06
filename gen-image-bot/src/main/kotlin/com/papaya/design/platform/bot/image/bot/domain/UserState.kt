@@ -7,6 +7,7 @@ import com.papaya.design.platform.bot.image.bot.message.realisticInteriorBatchKe
 import com.papaya.design.platform.bot.image.bot.message.paymentKeyboard
 import com.papaya.design.platform.bot.image.bot.message.videoModes
 import com.papaya.design.platform.bot.image.bot.static.Payment
+import com.papaya.design.platform.bot.image.bot.static.ObjectRotation
 import com.papaya.design.platform.bot.image.bot.static.Support
 import com.papaya.design.platform.bot.image.bot.static.Video
 import com.papaya.design.platform.bot.image.bot.static.RealisticInteriorBatch
@@ -20,6 +21,11 @@ enum class UserState(
     WAITING_FOR_END_OF_PHOTO_GENERATION,
 
     REALISTIC_INTERIOR_WAITING_FOR_PHOTO,
+    ROTATION_OBJECT_WAITING_FOR_PHOTO,
+    ROTATION_OBJECT_WAITING_FOR_USER_PROMPT(
+        ObjectRotation.Text.WAITING_FOR_USER_PROMPT,
+        onlyBackKeyboard()
+    ),
     REALISTIC_INTERIOR_BATCH_WAITING_FOR_PHOTO(
         RealisticInteriorBatch.Text.WAITING_FOR_BATCH_IMAGE,
         realisticInteriorBatchKeyboard()

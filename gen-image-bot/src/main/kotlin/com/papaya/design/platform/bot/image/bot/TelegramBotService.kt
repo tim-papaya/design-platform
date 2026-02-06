@@ -42,6 +42,8 @@ class TelegramBotService(
     private val userService: UserService,
     @Value("\${support.admin.id}")
     private val supportId: Long,
+    @Value("\${com.papaya.design.platform.ai.image.rotation.model:}")
+    private val rotationModel: String,
 
     ) : BotService {
     @Autowired
@@ -143,6 +145,12 @@ class TelegramBotService(
                                     )
                                 }
 
+                                KeyboardInputButton.ROTATE_OBJECT.text -> {
+                                    messageService.sendWaitingForPhotoMessage(
+                                        id, ImageGenerationStrategy.START_OBJECT_ROTATION_GENERATION
+                                    )
+                                }
+
                                 KeyboardInputButton.GENERATE_REALISTIC_INTERIOR_BATCH.text -> {
                                     if (!user.isDesigner) return@message
 
@@ -214,6 +222,54 @@ class TelegramBotService(
                                 bot.sendMessage(
                                     chatId = ChatId.fromId(id.chatId),
                                     text = RealisticInterior.Text.WAITING_FOR_IMAGE,
+                                    replyMarkup = onlyBackKeyboard(),
+                                )
+                            }
+                        }
+
+                        ROTATION_OBJECT_WAITING_FOR_PHOTO -> {
+                            if (!paymentService.hasAvailableGenerations(id)) {
+                                messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
+                                return@message
+                            }
+
+                            if (photos != null) {
+                                userService.saveUser(id) { u ->
+                                    u.photos = photos.map { it.toEntity() }
+                                    u.userState = ROTATION_OBJECT_WAITING_FOR_USER_PROMPT
+                                }
+
+                                bot.sendMessage(
+                                    chatId = ChatId.fromId(id.chatId),
+                                    text = ObjectRotation.Text.WAITING_FOR_USER_PROMPT,
+                                    replyMarkup = onlyBackKeyboard(),
+                                )
+                            } else {
+                                bot.sendMessage(
+                                    chatId = ChatId.fromId(id.chatId),
+                                    text = ObjectRotation.Text.WAITING_FOR_IMAGE,
+                                    replyMarkup = onlyBackKeyboard(),
+                                )
+                            }
+                        }
+
+                        ROTATION_OBJECT_WAITING_FOR_USER_PROMPT -> {
+                            if (!messageText.isNullOrBlank()) {
+                                userService.saveUser(id) { u ->
+                                    u.userPrompt = messageText
+                                }
+
+                                imageMessageService.handlePhotoMessage(
+                                    id,
+                                    user.photos,
+                                    StartGenerationOfImage.OBJECT_ROTATION,
+                                    messageText,
+                                    rotationModel.trim().takeIf { it.isNotEmpty() }
+                                )
+                            } else {
+                                bot.sendMessage(
+                                    chatId = ChatId.fromId(id.chatId),
+                                    text = ObjectRotation.Text.WAITING_FOR_USER_PROMPT,
                                     replyMarkup = onlyBackKeyboard(),
                                 )
                             }

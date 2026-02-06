@@ -6,6 +6,7 @@ interface AiImageService {
     suspend fun generateImage(
         userPrompt: String?,
         systemPrompt: String,
+        model: String? = null,
         images: List<PhotoWithContent>,
         callback: (base64Images: List<String>) -> Unit
     )

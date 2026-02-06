@@ -1,6 +1,8 @@
 package com.papaya.design.platform.ai.openai
 
 import com.papaya.design.platform.ai.AiConfig
+import com.papaya.design.platform.ai.photo.Photo
+import com.papaya.design.platform.ai.photo.PhotoWithContent
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -19,8 +21,9 @@ class OpenAiImageServiceTest {
 
     @Test
     fun `should generate image successfully`() = runBlocking {
-        val image = Thread.currentThread().contextClassLoader.getResource("example.png").readBytes()
-        openAiImageService.generateImage(null,"", listOf(image)) { resImagesB64 ->
+        val imageBytes = Thread.currentThread().contextClassLoader.getResource("example.png").readBytes()
+        val image = PhotoWithContent(Photo("test", "test", 1024, 1024), imageBytes)
+        openAiImageService.generateImage(null, "", null, listOf(image)) { resImagesB64 ->
             File("result.png").writeBytes(getDecoder().decode(resImagesB64.first()))
         }
     }
