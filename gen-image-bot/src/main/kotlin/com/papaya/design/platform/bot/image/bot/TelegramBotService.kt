@@ -104,9 +104,9 @@ class TelegramBotService(
             message(Filter.Custom { successfulPayment != null }) {
                 val paymentInfo = paymentService.extractPaymentInfo(message.successfulPayment!!.invoicePayload)
                 userService.saveUser(paymentInfo.id) { u ->
-                    u.generations += paymentInfo.Amount
+                    u.generations += paymentInfo.amount
                 }
-                log.info { "User ${paymentInfo.id} bought ${paymentInfo.Amount} generations" }
+                log.info { "User ${paymentInfo.id} bought ${paymentInfo.amount} generations" }
                 messageService.sendMessageAndReturnToMainMenu(message.telegramId(), Payment.Text.SUCCSESFUL_PAYMENT)
             }
             message {

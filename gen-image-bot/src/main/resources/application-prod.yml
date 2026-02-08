@@ -33,3 +33,6 @@ runware:
   api:
     base-url: "https://api.runware.ai/v1"
     image-to-video-path: "https://api.runware.ai/v1"
+
+server:
+  port: 55532
