@@ -10,6 +10,8 @@ import com.github.kotlintelegrambot.dispatcher.preCheckoutQuery
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.Message
 import com.github.kotlintelegrambot.extensions.filters.Filter
+import com.papaya.design.platform.ai.AiImageGenerationQuality
+import com.papaya.design.platform.ai.openai.OpenAiModel
 import com.papaya.design.platform.ai.photo.Photo
 import com.papaya.design.platform.bot.image.bot.domain.UserState.*
 import com.papaya.design.platform.bot.image.bot.domain.toEntity
@@ -42,8 +44,6 @@ class TelegramBotService(
     private val userService: UserService,
     @Value("\${support.admin.id}")
     private val supportId: Long,
-    @Value("\${com.papaya.design.platform.ai.image.rotation.model:}")
-    private val rotationModel: String,
 
     ) : BotService {
     @Autowired
@@ -264,7 +264,9 @@ class TelegramBotService(
                                     user.photos,
                                     StartGenerationOfImage.OBJECT_ROTATION,
                                     messageText,
-                                    rotationModel.trim().takeIf { it.isNotEmpty() }
+                                    OpenAiModel.GPT_IMAGE_1_5.modelName,
+                                    AiImageGenerationQuality.LOW
+
                                 )
                             } else {
                                 bot.sendMessage(

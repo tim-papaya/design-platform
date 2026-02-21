@@ -1,6 +1,7 @@
 package com.papaya.design.platform.ai.openai
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.papaya.design.platform.ai.AiImageGenerationQuality
 import com.papaya.design.platform.ai.AiImageService
 import com.papaya.design.platform.ai.DelegateAiImageService
 import com.papaya.design.platform.ai.extractImageInB64
@@ -18,6 +19,7 @@ class MockImageService(
         userPrompt: String?,
         systemPrompt: String,
         model: String?,
+        quality: AiImageGenerationQuality,
         images: List<PhotoWithContent>,
         callback: (List<String>) -> Unit
     ) {

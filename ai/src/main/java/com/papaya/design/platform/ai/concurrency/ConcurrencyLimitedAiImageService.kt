@@ -1,5 +1,6 @@
 package com.papaya.design.platform.ai.concurrency
 
+import com.papaya.design.platform.ai.AiImageGenerationQuality
 import com.papaya.design.platform.ai.AiImageService
 import com.papaya.design.platform.ai.DelegateAiImageService
 import com.papaya.design.platform.ai.photo.PhotoWithContent
@@ -37,6 +38,7 @@ class ConcurrencyLimitedAiImageService(
         userPrompt: String?,
         systemPrompt: String,
         model: String?,
+        quality: AiImageGenerationQuality,
         images: List<PhotoWithContent>,
         callback: (base64Images: List<String>) -> Unit
     ) {
@@ -46,7 +48,7 @@ class ConcurrencyLimitedAiImageService(
             val currentActive = activeRequests.incrementAndGet()
             log.info { "Image generation started: active=$currentActive limit=$maxConcurrentRequests" }
             try {
-                delegate.generateImage(userPrompt, systemPrompt, model, images, callback)
+                delegate.generateImage(userPrompt, systemPrompt, model, quality, images, callback)
             } finally {
                 val remaining = activeRequests.decrementAndGet()
                 log.info { "Image generation finished: active=$remaining limit=$maxConcurrentRequests" }

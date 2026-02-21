@@ -7,6 +7,7 @@ interface AiImageService {
         userPrompt: String?,
         systemPrompt: String,
         model: String? = null,
+        quality: AiImageGenerationQuality,
         images: List<PhotoWithContent>,
         callback: (base64Images: List<String>) -> Unit
     )

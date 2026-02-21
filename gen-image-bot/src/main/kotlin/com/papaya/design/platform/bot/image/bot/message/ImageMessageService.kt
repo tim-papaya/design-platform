@@ -5,6 +5,7 @@ import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.TelegramFile
 import com.github.kotlintelegrambot.network.bimap
 import com.github.kotlintelegrambot.network.fold
+import com.papaya.design.platform.ai.AiImageGenerationQuality
 import com.papaya.design.platform.ai.AiImageService
 import com.papaya.design.platform.ai.photo.Photo
 import com.papaya.design.platform.ai.photo.PhotoWithContent
@@ -46,6 +47,7 @@ class ImageMessageService(
         commandState: StartGenerationOfImage,
         userPrompt: String? = null,
         model: String? = null,
+        quality: AiImageGenerationQuality = AiImageGenerationQuality.HIGH
     ) {
         try {
             userService.saveUser(id) { u ->
@@ -84,6 +86,7 @@ class ImageMessageService(
                         userPrompt = userPrompt,
                         systemPrompt = commandState.systemPrompt,
                         model = model,
+                        quality = quality,
                         images = resultPhotos,
                     ) { base64Images ->
                         val imageArray = base64Images

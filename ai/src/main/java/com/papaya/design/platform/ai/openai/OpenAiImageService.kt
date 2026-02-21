@@ -1,19 +1,16 @@
 package com.papaya.design.platform.ai.openai
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.papaya.design.platform.ai.AiImageGenerationQuality
 import com.papaya.design.platform.ai.AiImageService
 import com.papaya.design.platform.ai.DelegateAiImageService
 import com.papaya.design.platform.ai.HttpClientService
 import com.papaya.design.platform.ai.extractImagesInB64
+import com.papaya.design.platform.ai.openai.OpenAiModel.*
 import com.papaya.design.platform.ai.photo.PhotoWithContent
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.springframework.beans.factory.annotation.Value
@@ -25,7 +22,6 @@ import java.time.LocalDateTime
 private val log = KotlinLogging.logger {}
 
 private const val API_URL_IMAGES = "https://api.openai.com/v1/images/edits"
-private const val DEFAULT_OPENAI_IMAGE_MODEL = "gpt-image-1"
 
 @Profile("prod", "open-ai-image")
 @Service
@@ -41,19 +37,25 @@ class OpenAiImageService(
         userPrompt: String?,
         systemPrompt: String,
         model: String?,
+        quality: AiImageGenerationQuality,
         images: List<PhotoWithContent>,
         callback: (List<String>) -> Unit,
     ) {
         val inputMainImage = images.first()
 
+        val openAiQuality = quality.toOpenAi(inputMainImage)
+        val openAiModel = model?.trim().takeUnless { it.isNullOrEmpty() } ?: GPT_IMAGE_1.modelName
+
+        log.info { "Using quality preset: $openAiQuality and model: $openAiModel"}
+
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart("model", model?.trim().takeUnless { it.isNullOrEmpty() } ?: DEFAULT_OPENAI_IMAGE_MODEL)
+            .addFormDataPart("model", openAiModel)
             .addFormDataPart("prompt", "$systemPrompt\n$userPrompt")
             .addFormDataPart("output_format", "png")
-            .addFormDataPart("quality", "high")
-            .addFormDataPart("size", inputMainImage.currentPhoto.imageOrientation.toOpenAiSize())
-            .addFormDataPart("input_fidelity", "high").apply {
+            .addFormDataPart("quality", openAiQuality.quality)
+            .addFormDataPart("size", openAiQuality.size)
+            .addFormDataPart("input_fidelity", openAiQuality.inputFidelity).apply {
                 if (images.size == 1) {
                     addFormDataPart(
                         name = "image",
