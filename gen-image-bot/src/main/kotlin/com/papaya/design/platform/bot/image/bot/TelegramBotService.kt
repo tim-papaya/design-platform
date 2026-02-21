@@ -146,6 +146,8 @@ class TelegramBotService(
                                 }
 
                                 KeyboardInputButton.ROTATE_OBJECT.text -> {
+                                    if (!user.isDesigner) return@message
+
                                     messageService.sendWaitingForPhotoMessage(
                                         id, ImageGenerationStrategy.START_OBJECT_ROTATION_GENERATION
                                     )
