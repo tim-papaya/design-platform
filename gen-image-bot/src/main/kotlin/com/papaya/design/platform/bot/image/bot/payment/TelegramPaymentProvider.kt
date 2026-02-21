@@ -8,6 +8,7 @@ import com.github.kotlintelegrambot.entities.payments.PaymentInvoiceInfo
 import com.papaya.design.platform.bot.image.bot.message.TelegramId
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Lazy
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 
@@ -15,6 +16,7 @@ private const val PAYLOAD_SEPARATOR = ":-:"
 private val log = KotlinLogging.logger { }
 
 @Service
+@Lazy
 @Profile("!robokassa")
 class TelegramPaymentProvider(
     private val bot: Bot,

@@ -1,7 +1,7 @@
 spring:
   main:
     allow-circular-references: true
-    web-application-type: none
+    web-application-type: servlet
   datasource:
     hikari:
       maximum-pool-size: 5

@@ -7,7 +7,10 @@ import com.papaya.design.platform.bot.image.bot.payment.PaymentAmount
 import com.papaya.design.platform.bot.image.bot.payment.PaymentInfo
 import com.papaya.design.platform.bot.image.bot.payment.PaymentProvider
 import mu.KotlinLogging
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Lazy
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.util.UriComponentsBuilder
@@ -21,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong
 private val log = KotlinLogging.logger { }
 
 @Service
+@Lazy
 @Profile("robokassa")
 class RobokassaPaymentProvider(
     private val bot: Bot,
@@ -41,6 +45,7 @@ class RobokassaPaymentProvider(
 ) : PaymentProvider {
 
     private val invIdSequence = AtomicLong(System.currentTimeMillis())
+    private val http = OkHttpClient()
 
     override fun sendInvoice(id: TelegramId, paymentAmount: PaymentAmount) {
         val invId = invIdSequence.incrementAndGet()
@@ -57,7 +62,7 @@ class RobokassaPaymentProvider(
             shpParams = shpParams
         )
 
-        val link = UriComponentsBuilder.fromHttpUrl(paymentUrl)
+        val servicePaymentLink = UriComponentsBuilder.fromUriString(paymentUrl)
             .queryParam("MerchantLogin", merchantLogin)
             .queryParam("OutSum", outSum)
             .queryParam("InvId", invId)
@@ -70,14 +75,24 @@ class RobokassaPaymentProvider(
                 if (failUrl.isNotBlank()) queryParam("FailUrl", failUrl)
                 shpParams.forEach { (k, v) -> queryParam(k, v) }
             }
-            .build(true)
+            .build()
             .toUriString()
+        log.info { "Prepared for ${id.userId} payment link $servicePaymentLink" }
 
-        bot.sendMessage(
-            chatId = ChatId.fromId(id.chatId),
-            text = "Оплата: ${paymentAmount.amountAsText}\nСсылка: $link"
-        ).onError { e ->
-            log.error { "Error sending Robokassa payment link: $e" }
+        val servicePaymentRequest = Request.Builder()
+            .url(servicePaymentLink)
+            .get()
+            .build()
+
+        http.newCall(servicePaymentRequest).execute().use { resp ->
+            val finalUrl = resp.request().url().toString()
+            log.info {"Prepared for ${id.userId} redirect payment link $finalUrl"}
+            bot.sendMessage(
+                chatId = ChatId.fromId(id.chatId),
+                text = "Оплата: ${paymentAmount.amountAsText}\nСсылка: $finalUrl"
+            ).onError { e ->
+                log.error { "Error sending Robokassa payment link: $e" }
+            }
         }
     }
 
@@ -140,7 +155,7 @@ object RobokassaSignature {
                 }
             }
         }
-        return RobokassaSignature.md5(base)
+        return md5(base)
     }
 
     fun md5(input: String): String =
