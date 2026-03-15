@@ -12,6 +12,7 @@ import com.papaya.design.platform.ai.photo.PhotoWithContent
 import com.papaya.design.platform.bot.image.bot.domain.UserState.WAITING_FOR_END_OF_PHOTO_GENERATION
 import com.papaya.design.platform.bot.image.bot.image.downloadImageAsBytes
 import com.papaya.design.platform.bot.image.bot.log.TracingService
+import com.papaya.design.platform.bot.image.bot.payment.GENERATION_TOKENS_FOR_FULL_IMAGE_GENERATION
 import com.papaya.design.platform.bot.image.bot.static.General
 import com.papaya.design.platform.bot.image.bot.user.UserService
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -47,7 +48,8 @@ class ImageMessageService(
         commandState: StartGenerationOfImage,
         userPrompt: String? = null,
         model: String? = null,
-        quality: AiImageGenerationQuality = AiImageGenerationQuality.HIGH
+        quality: AiImageGenerationQuality = AiImageGenerationQuality.HIGH,
+        generationCountUsed: Int = GENERATION_TOKENS_FOR_FULL_IMAGE_GENERATION
     ) {
         try {
             userService.saveUser(id) { u ->
@@ -97,7 +99,7 @@ class ImageMessageService(
                             imageArray.forEach { tracingService.logResultImage(id.chatId, it, "png") }
                         }
                         log.info("Generated ${imageArray.size} images as output")
-                        sendGeneratedImage(id, imageArray.first())
+                        sendGeneratedImage(id, imageArray.first(), generationCountUsed)
 
                         if (imageArray.size > 1) {
                             log.error("To many output images")
@@ -115,7 +117,8 @@ class ImageMessageService(
 
     private fun sendGeneratedImage(
         id: TelegramId,
-        imageBytes: ByteArray
+        imageBytes: ByteArray,
+        generationCountUsed: Int
     ) {
         try {
             val result = bot.sendPhoto(
@@ -128,7 +131,7 @@ class ImageMessageService(
             )
 
             result.fold({
-                messageService.sendGenerationCompletionMessage(id, "Successfully sent generated image to user")
+                messageService.sendGenerationCompletionMessage(id, "Successfully sent generated image to user", generationCountUsed)
             }, { error ->
                 messageService.sendErrorMessage(id, "Error sending generated image: ${error.errorBody}")
             })

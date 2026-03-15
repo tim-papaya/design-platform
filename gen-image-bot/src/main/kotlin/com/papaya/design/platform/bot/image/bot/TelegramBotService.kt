@@ -20,8 +20,7 @@ import com.papaya.design.platform.bot.image.bot.message.StartGenerationOfImage.C
 import com.papaya.design.platform.bot.image.bot.message.TelegramCommand.START_CMD
 import com.papaya.design.platform.bot.image.bot.message.WaitingPhotoState.Companion.PLANED_BEFORE_OPTIONS
 import com.papaya.design.platform.bot.image.bot.message.WaitingPhotoState.Companion.PLANED_BEFORE_PLAN
-import com.papaya.design.platform.bot.image.bot.payment.PaymentAmount
-import com.papaya.design.platform.bot.image.bot.payment.PaymentService
+import com.papaya.design.platform.bot.image.bot.payment.*
 import com.papaya.design.platform.bot.image.bot.static.*
 import com.papaya.design.platform.bot.image.bot.user.UserService
 import com.papaya.design.platform.bot.image.bot.workflow.GenImageStepProcessor
@@ -106,7 +105,7 @@ class TelegramBotService(
             message(Filter.Custom { successfulPayment != null }) {
                 val paymentInfo = paymentService.extractPaymentInfo(message.successfulPayment!!.invoicePayload)
                 userService.saveUser(paymentInfo.id) { u ->
-                    u.generations += paymentInfo.Amount
+                    u.generations += paymentInfo.Amount.toGenerationTokens()
                 }
                 log.info { "User ${paymentInfo.id} bought ${paymentInfo.Amount} generations" }
                 messageService.sendMessageAndReturnToMainMenu(message.telegramId(), Payment.Text.SUCCSESFUL_PAYMENT)
@@ -146,8 +145,6 @@ class TelegramBotService(
                                 }
 
                                 KeyboardInputButton.ROTATE_OBJECT.text -> {
-                                    if (!user.isDesigner) return@message
-
                                     messageService.sendWaitingForPhotoMessage(
                                         id, ImageGenerationStrategy.START_OBJECT_ROTATION_GENERATION
                                     )
@@ -201,7 +198,7 @@ class TelegramBotService(
                                 KeyboardInputButton.CHECK_STATUS.text -> {
                                     messageService.sendMessageAndReturnToMainMenu(
                                         id,
-                                        "${General.Text.GENERATIONS_AMOUNT} ${user.generationsNumber}"
+                                        "${General.Text.GENERATIONS_AMOUNT} ${user.generationsNumber.toFullImageGenerationAmount()}"
                                     )
                                 }
 
@@ -230,7 +227,7 @@ class TelegramBotService(
                         }
 
                         ROTATION_OBJECT_WAITING_FOR_PHOTO -> {
-                            if (!paymentService.hasAvailableGenerations(id)) {
+                            if (!paymentService.hasAvailableGenerations(id, GENERATION_TOKENS_FOR_ROTATION)) {
                                 messageService.sendWarningMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
                                 return@message
                             }
@@ -267,8 +264,8 @@ class TelegramBotService(
                                     StartGenerationOfImage.OBJECT_ROTATION,
                                     messageText,
                                     OpenAiModel.GPT_IMAGE_1_5.modelName,
-                                    AiImageGenerationQuality.LOW
-
+                                    AiImageGenerationQuality.LOW,
+                                    GENERATION_TOKENS_FOR_ROTATION
                                 )
                             } else {
                                 bot.sendMessage(

@@ -11,6 +11,7 @@ import com.papaya.design.platform.bot.image.bot.message.KeyboardInputButton
 import com.papaya.design.platform.bot.image.bot.message.MessageService
 import com.papaya.design.platform.bot.image.bot.message.StartGenerationOfImage
 import com.papaya.design.platform.bot.image.bot.message.TelegramId
+import com.papaya.design.platform.bot.image.bot.payment.GENERATION_TOKENS_FOR_FULL_IMAGE_GENERATION
 import com.papaya.design.platform.bot.image.bot.payment.PaymentService
 import com.papaya.design.platform.bot.image.bot.static.Error
 import com.papaya.design.platform.bot.image.bot.static.RealisticInteriorBatch
@@ -100,7 +101,7 @@ class RealisticInteriorBatchStep(
             return
         }
 
-        if (!paymentService.hasAvailableGenerations(id, photosCount)) {
+        if (!paymentService.hasAvailableGenerations(id, photosCount * GENERATION_TOKENS_FOR_FULL_IMAGE_GENERATION)) {
             messageService.sendMessage(id, Error.Text.ERROR_HAS_NO_GENERATIONS)
             return
         }

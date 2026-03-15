@@ -11,7 +11,6 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
-import kotlin.math.log
 
 private const val PAYLOAD_SEPARATOR = ":-:"
 private val log = KotlinLogging.logger { }
@@ -25,7 +24,7 @@ class PaymentService(
     private val userService: UserService
 ) {
 
-    fun hasAvailableGenerations(id: TelegramId, min: Int = 1): Boolean =
+    fun hasAvailableGenerations(id: TelegramId, min: Int = GENERATION_TOKENS_FOR_FULL_IMAGE_GENERATION): Boolean =
         userService.getUser(id.userId).generationsNumber >= min
 
     fun sendInvoice(id: TelegramId, paymentAmount: PaymentAmount) {

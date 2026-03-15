@@ -3,14 +3,13 @@ package com.papaya.design.platform.bot.image.bot.message
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.TelegramFile
-import com.github.kotlintelegrambot.entities.inputmedia.InputMediaDocument
-import com.github.kotlintelegrambot.entities.inputmedia.MediaGroup
 import com.github.kotlintelegrambot.network.fold
 import com.papaya.design.platform.ai.photo.Photo
 import com.papaya.design.platform.bot.image.bot.domain.User
 import com.papaya.design.platform.bot.image.bot.domain.UserEntity
 import com.papaya.design.platform.bot.image.bot.domain.UserState
 import com.papaya.design.platform.bot.image.bot.domain.toEntity
+import com.papaya.design.platform.bot.image.bot.payment.GENERATION_TOKENS_FOR_FULL_IMAGE_GENERATION
 import com.papaya.design.platform.bot.image.bot.static.Error
 import com.papaya.design.platform.bot.image.bot.static.General
 import com.papaya.design.platform.bot.image.bot.static.Rules.POLICY_FILE_NAME
@@ -73,7 +72,7 @@ class MessageService(
     fun sendGenerationCompletionMessage(
         id: TelegramId,
         successMessage: String,
-        generationCount: Int = 1
+        generationCount: Int = GENERATION_TOKENS_FOR_FULL_IMAGE_GENERATION
     ) {
         val user = userService.saveUser(id) { u ->
             u.userState = UserState.READY_FOR_CMD
