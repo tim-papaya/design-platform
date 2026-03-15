@@ -33,6 +33,7 @@ fun createMainKeyboard(user: User): KeyboardReplyMarkup {
     return KeyboardReplyMarkup(
         keyboard =
             listOf(
+                listOf(KeyboardButton(ROTATE_OBJECT.text)),
                 listOf(KeyboardButton(GENERATE_REALISTIC_INTERIOR.text)),
                 listOf(KeyboardButton(GENERATE_EXTENDED_REALISTIC_INTERIOR.text)),
                 listOf(KeyboardButton(ROOM_UPGRADE.text)),
@@ -44,8 +45,7 @@ fun createMainKeyboard(user: User): KeyboardReplyMarkup {
             ).let {
                 if (!user.isDesigner) it else {
                     listOf(
-                        listOf(KeyboardButton(GENERATE_REALISTIC_INTERIOR_BATCH.text)),
-                        listOf(KeyboardButton(ROTATE_OBJECT.text)),
+                        listOf(KeyboardButton(GENERATE_REALISTIC_INTERIOR_BATCH.text))
                     ) + it
                 }
             },

@@ -55,7 +55,7 @@ class ImageGenerationStrategy(
             newState = ROTATION_OBJECT_WAITING_FOR_PHOTO,
             textToShow = ObjectRotation.Text.START_GENERATION,
             stateToReturn = READY_FOR_CMD,
-            exampleImages = listOf(LocalFile.REALISTIC_EXAMPLE),
+            exampleImages = listOf(LocalFile.ROTATION_UPDATE),
         )
     }
 }
