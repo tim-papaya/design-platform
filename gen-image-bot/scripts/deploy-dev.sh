@@ -1,5 +1,5 @@
-HOST='image_bot@45.114.60.236'
-PORT='51712'
+HOST='image_bot@11.11.11.111'
+PORT='1111'
 
 ../gradlew build
 ssh -p $PORT $HOST 'mkdir -p ~/gen-image-bot/logs ~/gen-image-bot/trace'
