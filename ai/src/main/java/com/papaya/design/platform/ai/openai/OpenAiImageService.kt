@@ -44,9 +44,10 @@ class OpenAiImageService(
         val inputMainImage = images.first()
 
         val openAiQuality = quality.toOpenAi(inputMainImage)
-        val openAiModel = model?.trim().takeUnless { it.isNullOrEmpty() } ?: GPT_IMAGE_1.modelName
+        val openAiModel = model?.trim().takeUnless { it.isNullOrEmpty() } ?: GPT_IMAGE_2.modelName
 
-        log.info { "Using quality preset: $openAiQuality and model: $openAiModel"}
+        log.info { "Using quality preset: $openAiQuality and model: $openAiModel" }
+        log.info { "Prompt=$systemPrompt\n${userPrompt ?: ""}" }
 
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -55,7 +56,8 @@ class OpenAiImageService(
             .addFormDataPart("output_format", "png")
             .addFormDataPart("quality", openAiQuality.quality)
             .addFormDataPart("size", openAiQuality.size)
-            .addFormDataPart("input_fidelity", openAiQuality.inputFidelity).apply {
+//            .addFormDataPart("input_fidelity", openAiQuality.inputFidelity)
+            .apply {
                 if (images.size == 1) {
                     addFormDataPart(
                         name = "image",
